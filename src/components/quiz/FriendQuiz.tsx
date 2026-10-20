@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Check, Loader2, RotateCcw, Trophy, X } from "lucide-react";
@@ -181,7 +181,6 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
       <FriendResult
         quizId={quizId}
         creatorName={creatorName}
-        creatorGender={quiz?.creatorGender === "male" ? "male" : "female"}
         score={friendScore}
         tr={tr}
         onRetake={() => {
@@ -393,13 +392,6 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
 // Phase 3: 3-tier animation · Phase 4: action buttons + scoreboard CTA
 type RevealPhase = "dialogue" | "counter" | "tier" | "actions";
 
-function avatarFor(creatorGender: string, who: "creator" | "friend") {
-  const male = "/bear-male.png";
-  const female = "/bear-female.png";
-  if (who === "creator") return creatorGender === "male" ? male : female;
-  return creatorGender === "male" ? female : male;
-}
-
 function tierOf(score: number): "low" | "mid" | "high" {
   if (score < 5) return "low";
   if (score < 9) return "mid";
@@ -410,18 +402,26 @@ function SpeechBubble({
   side,
   children,
 }: {
-  side: "left" | "right";
+  side: "left" | "right" | "center";
   children: ReactNode;
 }) {
   return (
     <div
       className={`relative max-w-[85%] rounded-3xl bg-white px-5 py-3 shadow-xl ring-1 ring-black/5 ${
-        side === "left" ? "rounded-bl-md" : "rounded-br-md"
+        side === "left"
+          ? "rounded-bl-md"
+          : side === "right"
+          ? "rounded-br-md"
+          : ""
       }`}
     >
       <span
         className={`absolute -bottom-2 h-4 w-4 rotate-45 bg-white ${
-          side === "left" ? "left-6" : "right-6"
+          side === "left"
+            ? "left-6"
+            : side === "right"
+            ? "right-6"
+            : "left-1/2 -translate-x-1/2"
         }`}
       />
       {children}
@@ -450,50 +450,12 @@ function GrassPlatform() {
   );
 }
 
-// floating hearts for the high-tier celebration
-function HeartsBurst() {
-  const hearts = useMemo(
-    () =>
-      Array.from({ length: 22 }).map((_, i) => ({
-        left: Math.random() * 100,
-        top: Math.random() * 70,
-        delay: Math.random() * 1.6,
-        size: 16 + Math.random() * 24,
-        dur: 1.8 + Math.random() * 1.6,
-        i,
-      })),
-    []
-  );
-  return (
-    <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
-      {hearts.map((h) => (
-        <span
-          key={h.i}
-          className="absolute"
-          style={{
-            left: `${h.left}%`,
-            top: `${h.top}%`,
-            fontSize: `${h.size}px`,
-            animation: `heart-rise ${h.dur}s ease-in-out ${h.delay}s infinite`,
-          }}
-        >
-          💕
-        </span>
-      ))}
-    </div>
-  );
-}
-
 // ---- Phase 1: sequential typewriter dialogue ----
 function DialoguePhase({
   tr,
-  creatorImg,
-  friendImg,
   onDone,
 }: {
   tr: ReturnType<typeof t>;
-  creatorImg: string;
-  friendImg: string;
   onDone: () => void;
 }) {
   const lines = tr.dialogueLines;
@@ -549,32 +511,13 @@ function DialoguePhase({
         </AnimatePresence>
       </div>
 
-      {/* avatars */}
-      <div className="relative z-10 flex w-full max-w-md items-end justify-between px-2">
-        <div className="relative">
-          <span
-            className={`absolute -top-4 left-1/2 -translate-x-1/2 text-2xl transition-opacity duration-200 ${isA ? "opacity-100" : "opacity-0"}`}
-          >
-            💢
-          </span>
-          <img
-            src={creatorImg}
-            alt="creator"
-            className={`h-28 w-28 drop-shadow-lg sm:h-32 sm:w-32 ${isA ? "anim-idle-bob-fast" : "anim-idle-bob"}`}
-          />
-        </div>
-        <div className="relative">
-          <span
-            className={`absolute -top-4 left-1/2 -translate-x-1/2 text-2xl transition-opacity duration-200 ${isA ? "opacity-0" : "opacity-100"}`}
-          >
-            💬
-          </span>
-          <img
-            src={friendImg}
-            alt="friend"
-            className={`h-28 w-28 drop-shadow-lg sm:h-32 sm:w-32 ${!isA ? "anim-idle-bob-fast" : "anim-idle-bob-slow"}`}
-          />
-        </div>
+      {/* animated Bubu & Dudu (single GIF, both characters) */}
+      <div className="relative z-10 flex w-full max-w-md justify-center px-2">
+        <img
+          src="/avatars/idle.gif"
+          alt="Bubu and Dudu"
+          className="h-48 w-48 drop-shadow-lg sm:h-56 sm:w-56"
+        />
       </div>
       <GrassPlatform />
     </>
@@ -585,14 +528,10 @@ function DialoguePhase({
 function CounterPhase({
   score,
   tr,
-  creatorImg,
-  friendImg,
   onDone,
 }: {
   score: number;
   tr: ReturnType<typeof t>;
-  creatorImg: string;
-  friendImg: string;
   onDone: () => void;
 }) {
   const [n, setN] = useState(0);
@@ -631,16 +570,11 @@ function CounterPhase({
         </div>
       </div>
 
-      <div className="relative z-10 flex w-full max-w-md items-end justify-between px-2">
+      <div className="relative z-10 flex w-full max-w-md justify-center px-2">
         <img
-          src={creatorImg}
-          alt="creator"
-          className="h-28 w-28 drop-shadow-lg sm:h-32 sm:w-32 anim-idle-bob"
-        />
-        <img
-          src={friendImg}
-          alt="friend"
-          className="h-28 w-28 drop-shadow-lg sm:h-32 sm:w-32 anim-idle-bob-slow"
+          src="/avatars/idle.gif"
+          alt="Bubu and Dudu"
+          className="h-48 w-48 drop-shadow-lg sm:h-56 sm:w-56"
         />
       </div>
       <GrassPlatform />
@@ -652,17 +586,15 @@ function CounterPhase({
 function TierPhase({
   score,
   tr,
-  creatorImg,
-  friendImg,
   onDone,
 }: {
   score: number;
   tr: ReturnType<typeof t>;
-  creatorImg: string;
-  friendImg: string;
   onDone: () => void;
 }) {
   const tier = tierOf(score);
+  // animated Bubu & Dudu reaction GIF switches per tier
+  const gifUrl = `/avatars/${tier}.gif`;
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -688,66 +620,33 @@ function TierPhase({
 
   return (
     <>
-      {tier === "high" && <HeartsBurst />}
-      {tier === "high" && <Confetti burstKey={"tier" + score} count={70} />}
+      {tier === "high" && <Confetti burstKey={"tier" + score} count={60} />}
 
-      {/* tier speech bubble from creator */}
-      <div className="absolute inset-x-0 top-[13%] flex justify-center px-6">
-        <div className="flex w-full max-w-sm animate-pop-in justify-start">
-          <SpeechBubble side="left">
-            <p className="text-base font-extrabold text-slate-800">{bubbleText}</p>
+      {/* tier speech bubble (centered) */}
+      <div className="absolute inset-x-0 top-[12%] flex justify-center px-6">
+        <div className="flex w-full max-w-sm animate-pop-in justify-center">
+          <SpeechBubble side="center">
+            <p className="text-center text-base font-extrabold text-slate-800">
+              {bubbleText}
+            </p>
           </SpeechBubble>
         </div>
       </div>
 
-      {/* mid-tier high-five burst */}
-      {tier === "mid" && (
-        <div className="pointer-events-none absolute inset-x-0 top-[40%] z-30 flex justify-center">
-          <span className="text-4xl anim-burst">💥</span>
-        </div>
-      )}
-
-      {/* high-tier hug heart */}
-      {tier === "high" && (
-        <div className="pointer-events-none absolute inset-x-0 top-[42%] z-30 flex justify-center">
-          <span className="text-5xl anim-big-heart">❤️</span>
-        </div>
-      )}
-
-      {/* avatars with per-tier CSS animation */}
-      <div className="relative z-10 flex w-full max-w-md items-end justify-between px-2">
-        <div className="relative">
-          <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-2xl animate-pop-in">
-            {tier === "low" ? "😡" : tier === "mid" ? "🤔" : "😍"}
-          </span>
-          <img
-            src={creatorImg}
-            alt="creator"
-            className={`h-28 w-28 drop-shadow-lg sm:h-32 sm:w-32 ${
-              tier === "low"
-                ? "anim-angry"
-                : tier === "mid"
-                ? "anim-hf-creator"
-                : "anim-hug-creator"
-            }`}
-          />
-        </div>
-        <div className="relative">
-          <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-2xl animate-pop-in">
-            {tier === "low" ? "😱" : tier === "mid" ? "😊" : "🥰"}
-          </span>
-          <img
-            src={friendImg}
-            alt="friend"
-            className={`h-28 w-28 drop-shadow-lg sm:h-32 sm:w-32 ${
-              tier === "low"
-                ? "anim-kick"
-                : tier === "mid"
-                ? "anim-hf-friend"
-                : "anim-hug-friend"
-            }`}
-          />
-        </div>
+      {/* animated reaction GIF — switches automatically per tier */}
+      <div className="relative z-10 flex w-full max-w-md justify-center px-2">
+        <img
+          key={gifUrl}
+          src={gifUrl}
+          alt={
+            tier === "low"
+              ? "Bubu pushing Dudu away"
+              : tier === "mid"
+              ? "Bubu and Dudu thinking"
+              : "Bubu and Dudu hugging"
+          }
+          className="h-52 w-52 drop-shadow-lg sm:h-60 sm:w-60"
+        />
       </div>
       <GrassPlatform />
     </>
@@ -967,7 +866,6 @@ function ResultActions({
 function FriendResult({
   quizId,
   creatorName,
-  creatorGender,
   score,
   tr,
   onRetake,
@@ -975,15 +873,12 @@ function FriendResult({
 }: {
   quizId: string;
   creatorName: string;
-  creatorGender: "male" | "female";
   score: number;
   tr: ReturnType<typeof t>;
   onRetake: () => void;
   onScores: () => void;
 }) {
   const [phase, setPhase] = useState<RevealPhase>("dialogue");
-  const creatorImg = avatarFor(creatorGender, "creator");
-  const friendImg = avatarFor(creatorGender, "friend");
 
   const goActions = () => {
     playWhoosh();
@@ -1009,8 +904,6 @@ function FriendResult({
       {phase === "dialogue" && (
         <DialoguePhase
           tr={tr}
-          creatorImg={creatorImg}
-          friendImg={friendImg}
           onDone={() => {
             playWhoosh();
             setPhase("counter");
@@ -1021,8 +914,6 @@ function FriendResult({
         <CounterPhase
           score={score}
           tr={tr}
-          creatorImg={creatorImg}
-          friendImg={friendImg}
           onDone={() => {
             playWhoosh();
             setPhase("tier");
@@ -1030,13 +921,7 @@ function FriendResult({
         />
       )}
       {phase === "tier" && (
-        <TierPhase
-          score={score}
-          tr={tr}
-          creatorImg={creatorImg}
-          friendImg={friendImg}
-          onDone={goActions}
-        />
+        <TierPhase score={score} tr={tr} onDone={goActions} />
       )}
     </div>
   );

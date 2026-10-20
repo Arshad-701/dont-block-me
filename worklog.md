@@ -116,3 +116,33 @@ Verification (Agent Browser, mobile 390x844, quiz cmvga3dq20000vhw1vp4he582 crea
 Stage Summary:
 - BUG 1 fixed: friends now get instant per-question feedback (green ✓ correct / red ✕ wrong + the correct answer revealed in green ✓), with a step tracker at the top showing ✓/✕ per question. Correct/wrong SFX play on selection.
 - ENHANCEMENT 2 fixed: avatars are no longer static stickers — idle animation (float + sway + breathe) runs continuously during dialogue/counter; tier animations are dynamic keyframe motion (low shake+turn+push/fall, mid nod+jump+bounce, high run+bounce+rising-hearts). All implemented as reliable CSS @keyframes (framer-motion transforms were unreliable in this stack).
+
+---
+Task ID: animated-gifs-bubu-dudu
+Agent: main-orchestrator (Z.ai Code)
+Task: Replace static PNG character stickers with real animated Bubu & Dudu GIFs that switch per phase/tier in the end-game reveal
+
+Work Log:
+- Sourced real animated Bubu & Dudu GIFs from Tenor by scraping https://tenor.com/search/<query> for media.tenor.com/*.gif URLs (Tenor media host is reachable, CORS-open, image/gif). Verified each downloaded GIF is truly animated via ffprobe frame count.
+- Downloaded candidates for each reaction and used ffmpeg to extract a representative frame, then VLM-analyzed the PNGs to confirm content (Bubu=panda, Dudu=brown bear) and action.
+- Final 4 GIFs hosted at /public/avatars/ (verified served HTTP 200 image/gif, animated):
+  * idle.gif (27 frames, 101KB) — Bubu & Dudu sitting together smiling (Phase 1 dialogue + Phase 2 counter)
+  * low.gif (10 frames, 115KB) — one pushing/spanking the other away (Phase 3 LOW <5)
+  * mid.gif (35 frames, 286KB) — Bubu thinking pose (Phase 3 MID 5-8)
+  * high.gif (78 frames, 111KB) — Bubu & Dudu hugging/love celebration (Phase 3 HIGH 9-10)
+- Rewrote DialoguePhase, CounterPhase, TierPhase to render a single dynamic <img src={gifUrl} /> (both characters in one GIF) instead of two separate static PNG avatars with CSS keyframe motion:
+  * DialoguePhase/CounterPhase: <img src="/avatars/idle.gif" />
+  * TierPhase: gifUrl = `/avatars/${tier}.gif` with key={gifUrl} so the GIF reloads/restarts when the src switches; kept the per-tier speech bubble (now centered via SpeechBubble side="center"), SFX, and Confetti overlay for high
+- Removed now-unused helpers/avatar image logic: avatarFor(), HeartsBurst(), useMemo import, creatorGender/creatorImg/friendImg props from FriendResult + DialoguePhase + CounterPhase + TierPhase + the FriendQuiz call site (GIFs depict both characters so per-creator-gender avatar selection is no longer needed)
+- Kept Phase 4 (ResultActions modal) unchanged; kept typewriter dialogue (Phase 1) + count-up counter (Phase 2) + SFX; the GIF simply replaces the static character stickers
+
+Verification (Agent Browser, mobile 390x844, quiz cmvga3dq20000vhw1vp4he582):
+- Phase 1 dialogue: idle.gif loads (naturalWidth 220, complete:true), shows Bubu(panda)+Dudu(bear) sitting together holding bottles + typewriter speech bubble caught mid-type ("sh|")
+- Phase 3 HIGH (10/10): img src=/avatars/high.gif, shows both bears hugging + confetti + "WOW! You really are my Best Friend Forever! ❤️✨" bubble
+- Phase 3 LOW (0/10): img src=/avatars/low.gif, shows one pushing/spanking the other away + "bye bye!... I will block you... hph 😡" bubble
+- Phase 3 MID (6/10): img src=/avatars/mid.gif, shows Bubu thinking + "Hmm... Not bad! You know me well, but you can do better! 🤔" bubble
+- GIF auto-switches per phase confirmed (src detected: /avatars/idle.gif -> /avatars/{low|mid|high}.gif)
+- Lint clean, no page errors, POST /api/response 200
+
+Stage Summary:
+- Static PNG character stickers replaced with real animated Bubu & Dudu GIFs (sourced from Tenor, self-hosted in /public/avatars/ for reliability). A single dynamic <img src={currentGifUrl} /> now switches automatically per phase: idle (sitting/blinking) in dialogue+counter, then low (pushing away) / mid (thinking) / high (hugging+love) in the tier reaction. Existing layout, colors, typewriter dialogue, score counter, SFX, and Phase 4 actions modal are preserved.
