@@ -1,0 +1,96 @@
+{
+  "quiz_title": "Don't Block Me - Friendship Dare",
+  "total_questions": 10,
+  "questions": [
+    {
+      "id": 1,
+      "question_text": "What does {name} spend most of his/her money on?",
+      "options": [
+        {"id": "a", "text": "Snacks / Food 🍗", "image_url": "/images/food.png"},
+        {"id": "b", "text": "Clothes / Shoes 👟", "image_url": "/images/clothes.png"},
+        {"id": "c", "text": "Games 🎮", "image_url": "/images/games.png"},
+        {"id": "d", "text": "Tech / Accessories 🎧", "image_url": "/images/tech.png"},
+        {"id": "e", "text": "Going out with friends 🥂", "image_url": "/images/friends.png"},
+        {"id": "f", "text": "Nothing - saves it 🪙", "image_url": "/images/saving.png"}
+      ]
+    },
+    {
+      "id": 2,
+      "question_text": "What's {name}'s favorite cartoon?",
+      "options": [
+        {"id": "a", "text": "Shinchan 🖍️", "image_url": "/images/shinchan.png"},
+        {"id": "b", "text": "Doraemon 🐱", "image_url": "/images/doraemon.png"},
+        {"id": "c", "text": "Ninja Hattori 🥷", "image_url": "/images/ninja.png"}
+      ]
+    },
+    {
+      "id": 3,
+      "question_text": "How does {name} usually text?",
+      "options": [
+        {"id": "a", "text": "Lots of messages in a row 📱", "image_url": "/images/msg_row.png"},
+        {"id": "b", "text": "One long message 📑", "image_url": "/images/msg_long.png"}
+      ]
+    },
+    {
+      "id": 4,
+      "question_text": "What was {name}'s favorite game as a kid?",
+      "options": [
+        {"id": "a", "text": "Gully Cricket 🏏", "image_url": "/images/cricket.png"},
+        {"id": "b", "text": "Hide and Seek 🫣", "image_url": "/images/hideseek.png"},
+        {"id": "c", "text": "Tag / Pakdam Pakdai 🏃", "image_url": "/images/tag.png"}
+      ]
+    },
+    {
+      "id": 5,
+      "question_text": "What's {name}'s go-to sweet or tangy treat?",
+      "options": [
+        {"id": "a", "text": "Pulsa Kachha Aam 🥭", "image_url": "/images/pulse.png"},
+        {"id": "b", "text": "Mango Bite 🍬", "image_url": "/images/mangobite.png"},
+        {"id": "c", "text": "Melody 🍫", "image_url": "/images/melody.png"}
+      ]
+    },
+    {
+      "id": 6,
+      "question_text": "Where did {name} usually sit in class?",
+      "options": [
+        {"id": "a", "text": "Front 🤓", "image_url": "/images/front.png"},
+        {"id": "b", "text": "Back 😎", "image_url": "/images/back.png"}
+      ]
+    },
+    {
+      "id": 7,
+      "question_text": "What is {name} most scared of?",
+      "options": [
+        {"id": "a", "text": "Injections 💉", "image_url": "/images/injection.png"},
+        {"id": "b", "text": "Roller coasters 🎢", "image_url": "/images/coaster.png"}
+      ]
+    },
+    {
+      "id": 8,
+      "question_text": "Which dessert would {name} pick?",
+      "options": [
+        {"id": "a", "text": "Gulab Jamun 🧆", "image_url": "/images/gulabjamun.png"},
+        {"id": "b", "text": "Jalebi 🥨", "image_url": "/images/jalebi.png"},
+        {"id": "c", "text": "Rasmalai 🥣", "image_url": "/images/rasmalai.png"}
+      ]
+    },
+    {
+      "id": 9,
+      "question_text": "When did {name} usually study for exams?",
+      "options": [
+        {"id": "a", "text": "Days in advance 📅", "image_url": "/images/days.png"},
+        {"id": "b", "text": "The night before 🌙", "image_url": "/images/night.png"},
+        {"id": "c", "text": "5 minutes before ⏱️", "image_url": "/images/5min.png"}
+      ]
+    },
+    {
+      "id": 10,
+      "question_text": "What's {name}'s favorite fast food?",
+      "options": [
+        {"id": "a", "text": "Burger 🍔", "image_url": "/images/burger.png"},
+        {"id": "b", "text": "Pizza 🍕", "image_url": "/images/pizza.png"},
+        {"id": "c", "text": "Momos 🥟", "image_url": "/images/momos.png"}
+      ]
+    }
+  ]
+}

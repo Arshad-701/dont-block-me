@@ -1,0 +1,52 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Friendship Quiz App models
+model Quiz {
+  id            String     @id @default(cuid())
+  creatorName   String
+  creatorGender String
+  language      String     @default("en")
+  // JSON array of selected option indices for 10 questions
+  answers       String
+  createdAt     DateTime   @default(now())
+  responses     Response[]
+}
+
+model Response {
+  id         String   @id @default(cuid())
+  quizId     String
+  quiz       Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  friendName String
+  // JSON array of friend's selected option indices
+  answers    String
+  score      Int
+  createdAt  DateTime @default(now())
+}
