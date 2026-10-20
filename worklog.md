@@ -84,3 +84,35 @@ Stage Summary:
 - End-game score reveal now runs a cinematic 4-phase sequence: typewriter dialogue (typing SFX) -> count-up score (tick SFX) -> 3-tier animation with distinct SFX/dialogue (LOW kick-off+cry, MID high-five+cheer, HIGH hug+hearts+confetti+fanfare) -> actions modal with create-your-quiz CTA + scoreboard link
 - Existing modal/flows unchanged; all tier avatar animations implemented as reliable CSS keyframes (framer-motion was unreliable for transforms in this stack)
 - Skip button lets users jump straight to the actions modal
+
+---
+Task ID: feedback+dynamic-motion
+Agent: main-orchestrator (Z.ai Code)
+Task: Fix BUG 1 (instant correct/incorrect option feedback) + ENHANCEMENT 2 (dynamic character motion) without breaking existing layout/flows
+
+Work Log:
+BUG 1 - Quiz Option Instant Feedback:
+- Added playCorrect (G->C high ding) and playWrong (descending sawtooth buzz) to src/lib/sounds.ts
+- Added answers:number[] to QuizInfo type so the friend flow can read the creator's per-question correct option (the GET /api/quiz already returns answers parsed)
+- Rewrote FriendQuiz choose(): locks once answered, plays playCorrect/playWrong instantly, auto-advances after a 1.3s feedback delay (advanceTimer ref, clearable by Continue); next() requires an answer before advancing/submitting
+- Rewrote the option card rendering with feedback states: selected-correct = bg-green-100 border-green-500 + green ✓ badge; selected-wrong = bg-red-100 border-red-500 + red ✕ badge; revealed correct (when wrong selected) = green ✓; other options dimmed (opacity-50 grayscale). data-sound="none" on options so the global tap listener is silent and only the correct/wrong SFX plays.
+- Replaced the ProgressBar with a new inline step tracker: 10 numbered badges that turn green ✓ (correct) or red ✕ (wrong) per answered question, current question highlighted sky. Removed unused ProgressBar import.
+
+ENHANCEMENT 2 - Dynamic Character Motion (CSS keyframes, refined to match specs):
+- Idle (dialogue + counter): idle-bob keyframe now combines translateY(-8) + rotate(-2/+2deg) sway + scale(1.03) breathing, 1.6s infinite; speaking avatar uses idle-bob-fast (translateY -11, scale 1.07, 0.55s). Verified alive: creator transform oscillated translateY -9.3 -> -6.4 -> -1.3 -> -11 and scale 1.06 -> 1.008 -> 1.07 over 1s during dialogue.
+- LOW tier: angry-shake-turn keyframe (creator shakes x ±7 + rotate ±6deg, then scaleX -> -1 to turn away, forwards) + fall-cry keyframe (friend pushed out: translate to 360px, y +80, rotate 38deg, opacity 0). Verified: creator scaleX 0.73 mid-flip, friend matrix translateX 226 rotate ~18deg.
+- MID tier: nod-jump keyframe (creator nods rotate 11/-11deg + jumps translateY -24) + happy-bounce keyframe (friend translateY -15 scale 1.06, x3). Verified: creator translateY -23.6, friend scale 1.05.
+- HIGH tier: hug-creator/hug-friend keyframes (run to center ±150 + scale bounce [1, 1.2, 1.1, 1] returning to 1) + heart-rise keyframe (hearts translateY +20 -> -70 while fading). Verified: creator matrix scale 1.036 translateX 150, friend translateX -150; rising hearts + big red heart + "Best Friend Forever" bubble.
+
+Verification (Agent Browser, mobile 390x844, quiz cmvga3dq20000vhw1vp4he582 creator answered all option 0):
+- Wrong answer feedback: Burger red ✕ + Pizza green ✓ revealed, Sushi/Ice Cream dimmed, step tracker badge 1 red ✕
+- Correct answer feedback: Tokyo green ✓, others dimmed, step tracker badge 1 red ✕ + badge 2 green ✓
+- LOW 0/10: creator turns away (scaleX -> -1), friend pushed off (translateX 226+, rotate, fade), "bye bye I will block you" bubble
+- MID 6/10: creator nod+jump (translateY -23.6), friend bounce (scale 1.05), "Not bad" bubble + 💥 burst
+- HIGH 10/10: both run to center (±150) + scale bounce, rising hearts, big ❤️, "Best Friend Forever" bubble
+- Idle alive during dialogue (transform oscillates)
+- Lint clean, no page errors, POST /api/response 200
+
+Stage Summary:
+- BUG 1 fixed: friends now get instant per-question feedback (green ✓ correct / red ✕ wrong + the correct answer revealed in green ✓), with a step tracker at the top showing ✓/✕ per question. Correct/wrong SFX play on selection.
+- ENHANCEMENT 2 fixed: avatars are no longer static stickers — idle animation (float + sway + breathe) runs continuously during dialogue/counter; tier animations are dynamic keyframe motion (low shake+turn+push/fall, mid nod+jump+bounce, high run+bounce+rising-hearts). All implemented as reliable CSS @keyframes (framer-motion transforms were unreliable in this stack).

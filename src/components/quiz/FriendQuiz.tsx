@@ -3,9 +3,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Check, Loader2, RotateCcw, Trophy } from "lucide-react";
+import { ArrowRight, Check, Loader2, RotateCcw, Trophy, X } from "lucide-react";
 import { AppHeader } from "./AppHeader";
-import { ProgressBar } from "./ProgressBar";
 import { AdBanner } from "./AdBanner";
 import { Confetti } from "./Confetti";
 import { useQuizStore } from "@/store/quiz-store";
@@ -25,6 +24,8 @@ import {
   playHighFive,
   playFanfare,
   playHeartPop,
+  playCorrect,
+  playWrong,
 } from "@/lib/sounds";
 
 type QuizInfo = {
@@ -32,6 +33,8 @@ type QuizInfo = {
   creatorName: string;
   creatorGender: string;
   language: string;
+  // creator's selected option index per question (-1 if skipped)
+  answers: number[];
 };
 
 export function FriendQuiz({ quizId }: { quizId: string }) {
@@ -53,6 +56,14 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<"name" | "questions" | "result">("name");
   const [submitting, setSubmitting] = useState(false);
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // clear any pending auto-advance on unmount
+  useEffect(() => {
+    return () => {
+      if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    };
+  }, []);
 
   // fetch quiz
   useEffect(() => {
@@ -91,17 +102,27 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
   const question = QUESTIONS[friendCurrent];
   const selected = friendAnswers[friendCurrent];
   const isLast = friendCurrent === TOTAL_QUESTIONS - 1;
+  const correctIdx = quiz?.answers[friendCurrent] ?? -1;
+  const answered = selected !== -1;
 
   const choose = (optIdx: number) => {
+    if (answered) return; // lock once answered
     setFriendAnswer(friendCurrent, optIdx);
-    if (!isLast)
-      setTimeout(() => {
+    // instant feedback sound
+    if (optIdx === correctIdx) playCorrect();
+    else playWrong();
+    // auto-advance after the user sees the feedback (except last question)
+    if (!isLast) {
+      advanceTimer.current = setTimeout(() => {
         playWhoosh();
         setFriendCurrent(friendCurrent + 1);
-      }, 280);
+      }, 1300);
+    }
   };
 
   const next = () => {
+    if (!answered) return; // must answer first
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
     if (isLast) void submit();
     else {
       playWhoosh();
@@ -237,8 +258,46 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
   return (
     <div className="flex min-h-screen flex-col">
       <AppHeader />
-      <div className="px-1 pb-2 pt-1">
-        <ProgressBar current={friendCurrent} />
+
+      {/* step tracker: numbered badges turn green ✓ (correct) or red ✕ (wrong) */}
+      <div className="px-3 pb-2 pt-1">
+        <div className="mb-1.5 flex items-center justify-between text-xs font-bold text-slate-600">
+          <span>
+            {tr.question} {friendCurrent + 1} {tr.of} {TOTAL_QUESTIONS}
+          </span>
+          <span className="text-pink-500">
+            {Math.round(((friendCurrent + 1) / TOTAL_QUESTIONS) * 100)}%
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          {Array.from({ length: TOTAL_QUESTIONS }).map((_, i) => {
+            const a = friendAnswers[i] !== -1;
+            const c = a && friendAnswers[i] === (quiz?.answers[i] ?? -1);
+            const isCur = i === friendCurrent;
+            return (
+              <div
+                key={i}
+                className={`flex h-7 flex-1 items-center justify-center rounded-full text-xs font-extrabold transition ${
+                  c
+                    ? "bg-green-500 text-white"
+                    : a
+                    ? "bg-red-500 text-white"
+                    : isCur
+                    ? "bg-sky-500 text-white ring-2 ring-sky-300"
+                    : "bg-white/80 text-slate-400 ring-1 ring-black/5"
+                }`}
+              >
+                {c ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : a ? (
+                  <X className="h-3.5 w-3.5" />
+                ) : (
+                  i + 1
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pb-4">
@@ -257,24 +316,43 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
 
           <div className="grid grid-cols-2 gap-3">
             {question.options.map((opt, idx) => {
-              const active = selected === idx;
+              const isSelected = answered && selected === idx;
+              const isCorrectOpt = idx === correctIdx;
+              const showCorrect = answered && isCorrectOpt; // selected-correct OR revealed
+              const showWrong = answered && isSelected && !isCorrectOpt;
+              const dim = answered && !isSelected && !isCorrectOpt;
               return (
                 <button
                   key={idx}
-                  data-sound="select"
+                  data-sound="none"
                   onClick={() => choose(idx)}
-                  className={`relative flex flex-col items-center gap-2 overflow-hidden rounded-3xl p-4 shadow-md ring-1 transition hover:scale-[1.03] active:scale-95 ${
-                    active
-                      ? "bg-gradient-to-br from-pink-500 to-fuchsia-500 text-white ring-pink-300 scale-[1.02] shadow-lg shadow-pink-300"
-                      : "bg-white text-slate-700 ring-black/5"
+                  className={`relative flex flex-col items-center gap-2 overflow-hidden rounded-3xl border-2 p-4 shadow-md transition active:scale-95 ${
+                    showCorrect && isSelected
+                      ? "border-green-500 bg-green-100 ring-2 ring-green-300 scale-[1.02] shadow-lg shadow-green-200"
+                      : showCorrect
+                      ? "border-green-500 bg-green-100"
+                      : showWrong
+                      ? "border-red-500 bg-red-100 ring-2 ring-red-300 scale-[1.02] shadow-lg shadow-red-200"
+                      : dim
+                      ? "border-white bg-white opacity-50"
+                      : "border-white bg-white text-slate-700 ring-black/5 hover:scale-[1.03]"
                   }`}
                 >
-                  {active && (
-                    <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/30">
+                  {showCorrect && (
+                    <span className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-green-500 text-white shadow-md">
                       <Check className="h-4 w-4" />
                     </span>
                   )}
-                  <span className={`flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${opt.color} text-4xl shadow-inner`}>
+                  {showWrong && (
+                    <span className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-500 text-white shadow-md">
+                      <X className="h-4 w-4" />
+                    </span>
+                  )}
+                  <span
+                    className={`flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${opt.color} text-4xl shadow-inner ${
+                      dim ? "opacity-60 grayscale" : ""
+                    }`}
+                  >
                     {opt.emoji}
                   </span>
                   <span className="text-sm font-bold">{opt.text}</span>
@@ -288,8 +366,8 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
         <div className="sticky bottom-0 z-30 -mx-4 mt-3 bg-gradient-to-t from-sky-50 to-transparent px-4 pb-2 pt-3">
           <button
             onClick={next}
-            disabled={submitting}
-            className="group flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-sky-300 transition hover:scale-[1.02] active:scale-95 disabled:opacity-70"
+            disabled={submitting || !answered}
+            className="group flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-sky-300 transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -396,7 +474,7 @@ function HeartsBurst() {
             left: `${h.left}%`,
             top: `${h.top}%`,
             fontSize: `${h.size}px`,
-            animation: `heart-pop ${h.dur}s ease-in-out ${h.delay}s infinite`,
+            animation: `heart-rise ${h.dur}s ease-in-out ${h.delay}s infinite`,
           }}
         >
           💕

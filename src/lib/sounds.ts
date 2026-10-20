@@ -182,3 +182,15 @@ export function playFanfare() {
 export function playHeartPop() {
   sweep(800, 1400, 0, 0.08, "triangle", 0.07);
 }
+
+// short happy "correct" ding (G -> C high)
+export function playCorrect() {
+  tone(784, 0, 0.09, "triangle", 0.13);
+  tone(1046.5, 0.08, 0.18, "triangle", 0.13);
+}
+
+// short "wrong" descending buzz
+export function playWrong() {
+  tone(311, 0, 0.14, "sawtooth", 0.1);
+  tone(233, 0.12, 0.22, "sawtooth", 0.1);
+}
