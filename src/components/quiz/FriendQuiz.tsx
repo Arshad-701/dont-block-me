@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Check, Loader2, RotateCcw, Trophy } from "lucide-react";
 import { AppHeader } from "./AppHeader";
 import { ProgressBar } from "./ProgressBar";
@@ -11,7 +12,20 @@ import { useQuizStore } from "@/store/quiz-store";
 import { t } from "@/lib/i18n";
 import { QUESTIONS, TOTAL_QUESTIONS } from "@/lib/quiz-data";
 import { toast } from "sonner";
-import { playWhoosh, playSuccess, playFail, playReveal } from "@/lib/sounds";
+import {
+  playWhoosh,
+  playSuccess,
+  playFail,
+  playReveal,
+  playType,
+  playTick,
+  playKick,
+  playCry,
+  playCheer,
+  playHighFive,
+  playFanfare,
+  playHeartPop,
+} from "@/lib/sounds";
 
 type QuizInfo = {
   id: string;
@@ -146,6 +160,7 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
       <FriendResult
         quizId={quizId}
         creatorName={creatorName}
+        creatorGender={quiz?.creatorGender === "male" ? "male" : "female"}
         score={friendScore}
         tr={tr}
         onRetake={() => {
@@ -295,9 +310,374 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
   );
 }
 
-// Friend result screen — cute modal with score, bears, confetti and
-// a prominent "create your quiz" CTA that kicks off the viral loop.
-function FriendResult({
+// ===== End-game score reveal sequence (4 phases) =====
+// Phase 1: typewriter dialogue · Phase 2: count-up score ·
+// Phase 3: 3-tier animation · Phase 4: action buttons + scoreboard CTA
+type RevealPhase = "dialogue" | "counter" | "tier" | "actions";
+
+function avatarFor(creatorGender: string, who: "creator" | "friend") {
+  const male = "/bear-male.png";
+  const female = "/bear-female.png";
+  if (who === "creator") return creatorGender === "male" ? male : female;
+  return creatorGender === "male" ? female : male;
+}
+
+function tierOf(score: number): "low" | "mid" | "high" {
+  if (score < 5) return "low";
+  if (score < 9) return "mid";
+  return "high";
+}
+
+function SpeechBubble({
+  side,
+  children,
+}: {
+  side: "left" | "right";
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={`relative max-w-[85%] rounded-3xl bg-white px-5 py-3 shadow-xl ring-1 ring-black/5 ${
+        side === "left" ? "rounded-bl-md" : "rounded-br-md"
+      }`}
+    >
+      <span
+        className={`absolute -bottom-2 h-4 w-4 rotate-45 bg-white ${
+          side === "left" ? "left-6" : "right-6"
+        }`}
+      />
+      {children}
+    </div>
+  );
+}
+
+function SkipButton({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      data-sound="none"
+      className="absolute right-3 top-3 z-40 flex items-center gap-1 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold text-slate-500 shadow-md ring-1 ring-black/5 backdrop-blur transition hover:scale-105 active:scale-95"
+    >
+      {label} <span className="text-sm">⏭</span>
+    </button>
+  );
+}
+
+function GrassPlatform() {
+  return (
+    <div className="relative z-0 w-full max-w-md">
+      <div className="h-3 w-full rounded-full bg-emerald-300/80 shadow-inner" />
+      <div className="-mt-1 h-2 w-full rounded-b-3xl bg-emerald-400/60" />
+    </div>
+  );
+}
+
+// floating hearts for the high-tier celebration
+function HeartsBurst() {
+  const hearts = useMemo(
+    () =>
+      Array.from({ length: 22 }).map((_, i) => ({
+        left: Math.random() * 100,
+        top: Math.random() * 70,
+        delay: Math.random() * 1.6,
+        size: 16 + Math.random() * 24,
+        dur: 1.8 + Math.random() * 1.6,
+        i,
+      })),
+    []
+  );
+  return (
+    <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
+      {hearts.map((h) => (
+        <span
+          key={h.i}
+          className="absolute"
+          style={{
+            left: `${h.left}%`,
+            top: `${h.top}%`,
+            fontSize: `${h.size}px`,
+            animation: `heart-pop ${h.dur}s ease-in-out ${h.delay}s infinite`,
+          }}
+        >
+          💕
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ---- Phase 1: sequential typewriter dialogue ----
+function DialoguePhase({
+  tr,
+  creatorImg,
+  friendImg,
+  onDone,
+}: {
+  tr: ReturnType<typeof t>;
+  creatorImg: string;
+  friendImg: string;
+  onDone: () => void;
+}) {
+  const lines = tr.dialogueLines;
+  const [i, setI] = useState(0);
+  const [typed, setTyped] = useState("");
+
+  useEffect(() => {
+    const line = lines[i] ?? "";
+    let ci = 0;
+    setTyped("");
+    let timer: ReturnType<typeof setTimeout>;
+    const typeNext = () => {
+      if (ci <= line.length) {
+        setTyped(line.slice(0, ci));
+        if (ci > 0 && ci % 3 === 0) playType();
+        ci++;
+        timer = setTimeout(typeNext, 42);
+      } else {
+        timer = setTimeout(() => {
+          if (i < lines.length - 1) setI(i + 1);
+          else onDone();
+        }, 1100);
+      }
+    };
+    typeNext();
+    return () => clearTimeout(timer);
+  }, [i]);
+
+  const isA = i % 2 === 0; // 0,2,4 = creator (left)
+
+  return (
+    <>
+      {/* speech bubble area */}
+      <div className="absolute inset-x-0 top-[15%] flex justify-center px-6">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 12, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.9 }}
+            transition={{ duration: 0.25 }}
+            className={`flex w-full max-w-sm ${
+              isA ? "justify-start" : "justify-end"
+            }`}
+          >
+            <SpeechBubble side={isA ? "left" : "right"}>
+              <p className="text-base font-bold text-slate-800">
+                {typed}
+                <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse bg-slate-400 align-middle" />
+              </p>
+            </SpeechBubble>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* avatars */}
+      <div className="relative z-10 flex w-full max-w-md items-end justify-between px-2">
+        <div className="relative">
+          <span
+            className={`absolute -top-4 left-1/2 -translate-x-1/2 text-2xl transition-opacity duration-200 ${isA ? "opacity-100" : "opacity-0"}`}
+          >
+            💢
+          </span>
+          <img
+            src={creatorImg}
+            alt="creator"
+            className={`h-28 w-28 drop-shadow-lg sm:h-32 sm:w-32 ${isA ? "anim-idle-bob-fast" : "anim-idle-bob"}`}
+          />
+        </div>
+        <div className="relative">
+          <span
+            className={`absolute -top-4 left-1/2 -translate-x-1/2 text-2xl transition-opacity duration-200 ${isA ? "opacity-0" : "opacity-100"}`}
+          >
+            💬
+          </span>
+          <img
+            src={friendImg}
+            alt="friend"
+            className={`h-28 w-28 drop-shadow-lg sm:h-32 sm:w-32 ${!isA ? "anim-idle-bob-fast" : "anim-idle-bob-slow"}`}
+          />
+        </div>
+      </div>
+      <GrassPlatform />
+    </>
+  );
+}
+
+// ---- Phase 2: animated count-up score counter ----
+function CounterPhase({
+  score,
+  tr,
+  creatorImg,
+  friendImg,
+  onDone,
+}: {
+  score: number;
+  tr: ReturnType<typeof t>;
+  creatorImg: string;
+  friendImg: string;
+  onDone: () => void;
+}) {
+  const [n, setN] = useState(0);
+
+  useEffect(() => {
+    if (n >= score) {
+      const t = setTimeout(onDone, 900);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => {
+      playTick();
+      setN(n + 1);
+    }, 180);
+    return () => clearTimeout(t);
+  }, [n, score]);
+
+  return (
+    <>
+      <div className="absolute inset-x-0 top-[16%] flex justify-center px-6">
+        <div className="w-full max-w-sm animate-pop-in text-center">
+          <div className="relative mx-auto w-fit">
+            <span className="block -rotate-2 rounded-md bg-amber-300 px-4 py-1 text-xs font-extrabold uppercase tracking-wide text-slate-700 shadow-md ring-1 ring-amber-400">
+              {tr.yourScore}
+            </span>
+          </div>
+          <div className="relative mx-auto mt-1 w-fit rounded-2xl bg-gradient-to-b from-sky-50 to-white px-8 py-3 shadow-inner ring-1 ring-sky-100">
+            <p className="text-5xl font-extrabold leading-none">
+              <span className="bg-gradient-to-r from-sky-500 to-blue-600 bg-clip-text text-transparent">
+                {n}
+              </span>
+              <span className="text-slate-300">/{TOTAL_QUESTIONS}</span>
+            </p>
+            <span className="absolute -left-1 top-1 text-sm animate-twinkle">✦</span>
+            <span className="absolute -right-1 bottom-1 text-sm animate-twinkle">✦</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative z-10 flex w-full max-w-md items-end justify-between px-2">
+        <img
+          src={creatorImg}
+          alt="creator"
+          className="h-28 w-28 drop-shadow-lg sm:h-32 sm:w-32 anim-idle-bob"
+        />
+        <img
+          src={friendImg}
+          alt="friend"
+          className="h-28 w-28 drop-shadow-lg sm:h-32 sm:w-32 anim-idle-bob-slow"
+        />
+      </div>
+      <GrassPlatform />
+    </>
+  );
+}
+
+// ---- Phase 3: 3-tier dynamic animations ----
+function TierPhase({
+  score,
+  tr,
+  creatorImg,
+  friendImg,
+  onDone,
+}: {
+  score: number;
+  tr: ReturnType<typeof t>;
+  creatorImg: string;
+  friendImg: string;
+  onDone: () => void;
+}) {
+  const tier = tierOf(score);
+
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    if (tier === "low") {
+      playKick();
+      timers.push(setTimeout(playCry, 500));
+    } else if (tier === "mid") {
+      timers.push(setTimeout(playCheer, 700));
+      timers.push(setTimeout(playHighFive, 1050));
+    } else {
+      playFanfare();
+      [500, 1100, 1700, 2300].forEach((d) =>
+        timers.push(setTimeout(playHeartPop, d))
+      );
+    }
+    const end = setTimeout(onDone, 4000);
+    timers.push(end);
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  const bubbleText =
+    tier === "low" ? tr.tierLowMsg : tier === "mid" ? tr.tierMidMsg : tr.tierHighMsg;
+
+  return (
+    <>
+      {tier === "high" && <HeartsBurst />}
+      {tier === "high" && <Confetti burstKey={"tier" + score} count={70} />}
+
+      {/* tier speech bubble from creator */}
+      <div className="absolute inset-x-0 top-[13%] flex justify-center px-6">
+        <div className="flex w-full max-w-sm animate-pop-in justify-start">
+          <SpeechBubble side="left">
+            <p className="text-base font-extrabold text-slate-800">{bubbleText}</p>
+          </SpeechBubble>
+        </div>
+      </div>
+
+      {/* mid-tier high-five burst */}
+      {tier === "mid" && (
+        <div className="pointer-events-none absolute inset-x-0 top-[40%] z-30 flex justify-center">
+          <span className="text-4xl anim-burst">💥</span>
+        </div>
+      )}
+
+      {/* high-tier hug heart */}
+      {tier === "high" && (
+        <div className="pointer-events-none absolute inset-x-0 top-[42%] z-30 flex justify-center">
+          <span className="text-5xl anim-big-heart">❤️</span>
+        </div>
+      )}
+
+      {/* avatars with per-tier CSS animation */}
+      <div className="relative z-10 flex w-full max-w-md items-end justify-between px-2">
+        <div className="relative">
+          <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-2xl animate-pop-in">
+            {tier === "low" ? "😡" : tier === "mid" ? "🤔" : "😍"}
+          </span>
+          <img
+            src={creatorImg}
+            alt="creator"
+            className={`h-28 w-28 drop-shadow-lg sm:h-32 sm:w-32 ${
+              tier === "low"
+                ? "anim-angry"
+                : tier === "mid"
+                ? "anim-hf-creator"
+                : "anim-hug-creator"
+            }`}
+          />
+        </div>
+        <div className="relative">
+          <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-2xl animate-pop-in">
+            {tier === "low" ? "😱" : tier === "mid" ? "😊" : "🥰"}
+          </span>
+          <img
+            src={friendImg}
+            alt="friend"
+            className={`h-28 w-28 drop-shadow-lg sm:h-32 sm:w-32 ${
+              tier === "low"
+                ? "anim-kick"
+                : tier === "mid"
+                ? "anim-hf-friend"
+                : "anim-hug-friend"
+            }`}
+          />
+        </div>
+      </div>
+      <GrassPlatform />
+    </>
+  );
+}
+
+// ---- Phase 4: action buttons + scoreboard CTA (existing modal kept intact) ----
+function ResultActions({
   quizId,
   creatorName,
   score,
@@ -501,6 +881,85 @@ function FriendResult({
       <div className="mx-auto mt-4 w-full max-w-md">
         <AdBanner />
       </div>
+    </div>
+  );
+}
+
+// Orchestrator: drives the 4-phase sequence with smooth transitions.
+function FriendResult({
+  quizId,
+  creatorName,
+  creatorGender,
+  score,
+  tr,
+  onRetake,
+  onScores,
+}: {
+  quizId: string;
+  creatorName: string;
+  creatorGender: "male" | "female";
+  score: number;
+  tr: ReturnType<typeof t>;
+  onRetake: () => void;
+  onScores: () => void;
+}) {
+  const [phase, setPhase] = useState<RevealPhase>("dialogue");
+  const creatorImg = avatarFor(creatorGender, "creator");
+  const friendImg = avatarFor(creatorGender, "friend");
+
+  const goActions = () => {
+    playWhoosh();
+    setPhase("actions");
+  };
+
+  if (phase === "actions") {
+    return (
+      <ResultActions
+        quizId={quizId}
+        creatorName={creatorName}
+        score={score}
+        tr={tr}
+        onRetake={onRetake}
+        onScores={onScores}
+      />
+    );
+  }
+
+  return (
+    <div className="relative flex min-h-screen flex-col items-center justify-end px-4 pb-8">
+      <SkipButton onClick={goActions} label={tr.skipIntro} />
+      {phase === "dialogue" && (
+        <DialoguePhase
+          tr={tr}
+          creatorImg={creatorImg}
+          friendImg={friendImg}
+          onDone={() => {
+            playWhoosh();
+            setPhase("counter");
+          }}
+        />
+      )}
+      {phase === "counter" && (
+        <CounterPhase
+          score={score}
+          tr={tr}
+          creatorImg={creatorImg}
+          friendImg={friendImg}
+          onDone={() => {
+            playWhoosh();
+            setPhase("tier");
+          }}
+        />
+      )}
+      {phase === "tier" && (
+        <TierPhase
+          score={score}
+          tr={tr}
+          creatorImg={creatorImg}
+          friendImg={friendImg}
+          onDone={goActions}
+        />
+      )}
     </div>
   );
 }

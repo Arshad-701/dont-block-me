@@ -203,3 +203,80 @@
   80% { transform: translateX(4px); }
 }
 .animate-shake { animation: shake-x 0.5s ease-in-out; }
+
+/* ===== End-game avatar tier animations (CSS, reliable) ===== */
+@keyframes idle-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes idle-bob-fast {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-9px) scale(1.06); }
+}
+.anim-idle-bob { animation: idle-bob 2.2s ease-in-out infinite; }
+.anim-idle-bob-slow { animation: idle-bob 2.6s ease-in-out 0.3s infinite; }
+.anim-idle-bob-fast { animation: idle-bob-fast 0.6s ease-in-out infinite; }
+
+/* LOW tier: creator angry lunge + friend kicked off-screen */
+@keyframes angry-lunge {
+  0% { transform: translateX(0) rotate(0); }
+  25% { transform: translateX(40px) rotate(-8deg); }
+  50% { transform: translateX(-8px) rotate(6deg); }
+  75% { transform: translateX(0) rotate(-4deg); }
+  100% { transform: translateX(0) rotate(0); }
+}
+@keyframes kick-off {
+  0% { transform: translate(0, 0) rotate(0); opacity: 1; }
+  38% { transform: translate(0, -12px) rotate(0); opacity: 1; }
+  72% { transform: translate(520px, 40px) rotate(70deg); opacity: 1; }
+  100% { transform: translate(760px, 260px) rotate(150deg); opacity: 0; }
+}
+.anim-angry { animation: angry-lunge 1.4s ease-in-out 0.3s 1; }
+.anim-kick { animation: kick-off 1.7s ease-in 0.6s 1 forwards; }
+
+/* MID tier: thoughtful then high-five toward center */
+@keyframes hf-creator {
+  0% { transform: translateX(0) rotate(-12deg) scale(1); }
+  30% { transform: translateX(0) rotate(0) scale(1); }
+  65% { transform: translateX(45px) rotate(0) scale(1.08); }
+  100% { transform: translateX(0) rotate(0) scale(1); }
+}
+@keyframes hf-friend {
+  0%, 30% { transform: translateX(0) scale(1); }
+  65% { transform: translateX(-45px) scale(1.08); }
+  100% { transform: translateX(0) scale(1); }
+}
+.anim-hf-creator { animation: hf-creator 1.8s ease-in-out 0.2s 1; }
+.anim-hf-friend { animation: hf-friend 1.8s ease-in-out 0.2s 1; }
+
+/* HIGH tier: run toward center and hug */
+@keyframes hug-creator {
+  0%, 42% { transform: translateX(0) scale(1); }
+  100% { transform: translateX(155px) scale(1.2); }
+}
+@keyframes hug-friend {
+  0%, 42% { transform: translateX(0) scale(1); }
+  100% { transform: translateX(-155px) scale(1.2); }
+}
+.anim-hug-creator { animation: hug-creator 1.3s ease-out 0.6s 1 forwards; }
+.anim-hug-friend { animation: hug-friend 1.3s ease-out 0.6s 1 forwards; }
+
+/* decorative bursts */
+@keyframes heart-pop {
+  0% { transform: scale(0); opacity: 0; }
+  25% { transform: scale(1.3); opacity: 1; }
+  70% { transform: scale(1); opacity: 0.95; }
+  100% { transform: scale(0.5); opacity: 0; }
+}
+@keyframes burst-pop {
+  0% { transform: scale(0); opacity: 0; }
+  40% { transform: scale(1.6); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
+}
+@keyframes big-heart-pop {
+  0% { transform: scale(0); }
+  60% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+.anim-burst { animation: burst-pop 0.6s ease-out 1s 1; }
+.anim-big-heart { animation: big-heart-pop 0.6s ease-out 1.3s 1 forwards; }

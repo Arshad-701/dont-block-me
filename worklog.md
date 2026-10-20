@@ -56,3 +56,31 @@ Work Log:
 Stage Summary:
 - Tap sounds + transition/reveal sound effects now play throughout the app (mutable via header speaker toggle, persisted)
 - Friend result page redesigned to match the reference screenshot: cute modal with score card, two-bears illustration, "find & block your fake friends" message, prominent "create your quiz" CTA (viral loop), confetti for high scores / shake for low scores, close button, "now it's your turn" footer
+
+---
+Task ID: endgame-3tier-reveal
+Agent: main-orchestrator (Z.ai Code)
+Task: Enhance End-Game Score Reveal Sequence with 4-phase 3-tier score logic (dialogue typewriter -> count-up -> 3-tier animation -> actions), without altering existing styling/flows
+
+Work Log:
+- Added 8 new SFX to src/lib/sounds.ts: playType (typewriter tick), playTick (count-up blip), playKick (thud), playCry (descending whine), playCheer (rising arpeggio), playHighFive (clap), playFanfare (bugle fanfare), playHeartPop (soft pop)
+- Added i18n strings: dialogueLines[] (5 typewriter lines), tierLowMsg/tierMidMsg/tierHighMsg, skipIntro (English; inherited by other languages)
+- Passed creatorGender from FriendQuiz to FriendResult so the two avatars can be the creator's bear + the opposite bear facing each other
+- Restructured FriendResult into a 4-phase state machine (RevealPhase: dialogue | counter | tier | actions) with setTimeout-driven transitions + a Skip button to jump to actions
+  * Phase 1 DialoguePhase: 2 avatars (creator left, friend right) on a grass platform, sequential typewriter speech bubbles via AnimatePresence, typing sound every 3 chars, speaker highlighted (💢/💬 overlay + fast bob), 5 lines from creator/friend alternating
+  * Phase 2 CounterPhase: paper-style score card with count-up 0->score, playTick per increment, avatars idle-bobbing
+  * Phase 3 TierPhase: tierOf(score) -> low (<5) / mid (5-8) / high (>=9); speech bubble + per-tier animation + SFX
+  * Phase 4 ResultActions: existing modal kept intact (score card, logo, bears-hero, reaction, find-block message, create-your-quiz CTA, share/check/try-again, now-your-turn, ad slot)
+- Discovered framer-motion keyframe-array animations on motion.img were NOT applying transforms reliably in this SSR/React-19 setup (getComputedStyle transform stayed 'none'). Switched ALL avatar animations + decorative bursts to pure CSS @keyframes in globals.css (proven-reliable pattern, matching existing animate-shake/pop-in/float): idle-bob, idle-bob-fast, angry-lunge + kick-off (LOW), hf-creator + hf-friend (MID), hug-creator + hug-friend (HIGH), heart-pop, burst-pop, big-heart-pop
+- Kept framer-motion only for the dialogue speech-bubble enter/exit swap (renders fine); everything else moved to CSS
+- Verified end-to-end with Agent Browser at mobile 390x844 by polling avatar className to detect the exact tier window, then capturing transforms + screenshots:
+  * LOW (0/10): creator transform returns to none after angry lunge; friend = matrix(...,607,120) rotated ~97° opacity 0.63 (kicked off-screen) + bubble "bye bye!... I will block you... hph 😡" + playKick/playCry
+  * MID (6/10): both bears matrix scale 1.054 translateX ±30.67 toward center + 💥 burst + bubble "Hmm... Not bad! You know me well, but you can do better! 🤔" + playCheer/playHighFive
+  * HIGH (10/10): creator matrix(1.2,..,155,0) + friend matrix(1.2,..,-155,0) = meet in center & hug + big red heart ❤️ + HeartsBurst + Confetti + bubble "WOW! You really are my Best Friend Forever! ❤️✨" + playFanfare/playHeartPop
+  * Phase 1 dialogue typewriter confirmed (bubble "should I block you? 😡" etc.) + Phase 4 actions modal (create-your-quiz CTA verified)
+- Lint clean, no page errors, POST /api/response 200
+
+Stage Summary:
+- End-game score reveal now runs a cinematic 4-phase sequence: typewriter dialogue (typing SFX) -> count-up score (tick SFX) -> 3-tier animation with distinct SFX/dialogue (LOW kick-off+cry, MID high-five+cheer, HIGH hug+hearts+confetti+fanfare) -> actions modal with create-your-quiz CTA + scoreboard link
+- Existing modal/flows unchanged; all tier avatar animations implemented as reliable CSS keyframes (framer-motion was unreliable for transforms in this stack)
+- Skip button lets users jump straight to the actions modal

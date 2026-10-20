@@ -88,6 +88,13 @@ export type Translation = {
   nowYourTurn: string;
   createYourQuiz: string;
   close: string;
+  // end-game dialogue sequence (Phase 1)
+  dialogueLines: string[];
+  // tier reveal messages (Phase 3)
+  tierLowMsg: string;
+  tierMidMsg: string;
+  tierHighMsg: string;
+  skipIntro: string;
 };
 
 const en: Translation = {
@@ -149,6 +156,17 @@ const en: Translation = {
   nowYourTurn: "~ now, it's your turn ~",
   createYourQuiz: "create your quiz",
   close: "close",
+  dialogueLines: [
+    "should I block you? 😡",
+    "but... I'm not your fake friend 🥺",
+    "then prove you're real 😤",
+    "just look at my score 📊",
+    "okay... let's see 🧐",
+  ],
+  tierLowMsg: "bye bye!... I will block you... hph 😡",
+  tierMidMsg: "Hmm... Not bad! You know me well, but you can do better! 🤔",
+  tierHighMsg: "WOW! You really are my Best Friend Forever! ❤️✨",
+  skipIntro: "skip",
 };
 
 const es: Translation = {
