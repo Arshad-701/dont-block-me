@@ -83,6 +83,11 @@ export type Translation = {
   // footer
   footerNote: string;
   back: string;
+  // result CTA (viral loop)
+  findBlockFakeFriends: string;
+  nowYourTurn: string;
+  createYourQuiz: string;
+  close: string;
 };
 
 const en: Translation = {
@@ -140,6 +145,10 @@ const en: Translation = {
   score: "score",
   footerNote: "made with 💕 for finding true friends",
   back: "back",
+  findBlockFakeFriends: "find & block your fake friends",
+  nowYourTurn: "~ now, it's your turn ~",
+  createYourQuiz: "create your quiz",
+  close: "close",
 };
 
 const es: Translation = {

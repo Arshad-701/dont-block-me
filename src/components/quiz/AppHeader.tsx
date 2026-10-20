@@ -3,8 +3,10 @@
 import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { LanguageChip } from "./LanguageDropdown";
+import { SoundToggle } from "./SoundToggle";
 import { useQuizStore } from "@/store/quiz-store";
 import { t } from "@/lib/i18n";
+import { playBack, playWhoosh } from "@/lib/sounds";
 
 // Logo with two bears
 export function Logo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
@@ -40,7 +42,11 @@ export function AppHeader({ showBack = true }: { showBack?: boolean }) {
     <header className="sticky top-0 z-40 flex items-center justify-between px-3 py-3">
       {showBack ? (
         <button
-          onClick={() => router.back()}
+          onClick={() => {
+            playBack();
+            playWhoosh();
+            router.back();
+          }}
           aria-label="Back"
           className="flex h-9 w-9 items-center justify-center rounded-full bg-white/95 shadow-md ring-1 ring-black/5 backdrop-blur transition hover:scale-105 active:scale-95"
         >
@@ -52,7 +58,10 @@ export function AppHeader({ showBack = true }: { showBack?: boolean }) {
       <div className="scale-90">
         <Logo size="sm" />
       </div>
-      <LanguageChip />
+      <div className="flex items-center gap-2">
+        <SoundToggle />
+        <LanguageChip />
+      </div>
     </header>
   );
 }

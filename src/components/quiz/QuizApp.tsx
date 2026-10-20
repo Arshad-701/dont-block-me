@@ -9,6 +9,7 @@ import { QuizCreator } from "./QuizCreator";
 import { SharePage } from "./SharePage";
 import { FriendQuiz } from "./FriendQuiz";
 import { Scoreboard } from "./Scoreboard";
+import { SoundManager } from "./SoundManager";
 import { useQuizStore } from "@/store/quiz-store";
 
 function RouterInner() {
@@ -54,6 +55,7 @@ export function QuizApp() {
   return (
     <div className="relative min-h-screen">
       <SkyBackground />
+      <SoundManager />
       <Suspense
         fallback={
           <div className="flex min-h-screen items-center justify-center">

@@ -6,10 +6,12 @@ import { ArrowRight, Check, Loader2, RotateCcw, Trophy } from "lucide-react";
 import { AppHeader } from "./AppHeader";
 import { ProgressBar } from "./ProgressBar";
 import { AdBanner } from "./AdBanner";
+import { Confetti } from "./Confetti";
 import { useQuizStore } from "@/store/quiz-store";
 import { t } from "@/lib/i18n";
 import { QUESTIONS, TOTAL_QUESTIONS } from "@/lib/quiz-data";
 import { toast } from "sonner";
+import { playWhoosh, playSuccess, playFail, playReveal } from "@/lib/sounds";
 
 type QuizInfo = {
   id: string;
@@ -66,6 +68,7 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
 
   const startQuiz = () => {
     if (friendName.trim().length > 0) {
+      playWhoosh();
       setPhase("questions");
       setFriendCurrent(0);
     }
@@ -77,12 +80,19 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
 
   const choose = (optIdx: number) => {
     setFriendAnswer(friendCurrent, optIdx);
-    if (!isLast) setTimeout(() => setFriendCurrent(friendCurrent + 1), 280);
+    if (!isLast)
+      setTimeout(() => {
+        playWhoosh();
+        setFriendCurrent(friendCurrent + 1);
+      }, 280);
   };
 
   const next = () => {
     if (isLast) void submit();
-    else setFriendCurrent(friendCurrent + 1);
+    else {
+      playWhoosh();
+      setFriendCurrent(friendCurrent + 1);
+    }
   };
 
   const submit = async () => {
@@ -100,6 +110,12 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
       setFriendScore(data.response.score);
+      // play reveal sound depending on score
+      playReveal();
+      setTimeout(() => {
+        if (data.response.score / TOTAL_QUESTIONS >= 0.5) playSuccess();
+        else playFail();
+      }, 350);
       setPhase("result");
     } catch {
       toast.error("Could not submit your answers");
@@ -230,6 +246,7 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
               return (
                 <button
                   key={idx}
+                  data-sound="select"
                   onClick={() => choose(idx)}
                   className={`relative flex flex-col items-center gap-2 overflow-hidden rounded-3xl p-4 shadow-md ring-1 transition hover:scale-[1.03] active:scale-95 ${
                     active
@@ -278,7 +295,8 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
   );
 }
 
-// Friend result screen
+// Friend result screen — cute modal with score, bears, confetti and
+// a prominent "create your quiz" CTA that kicks off the viral loop.
 function FriendResult({
   quizId,
   creatorName,
@@ -294,28 +312,36 @@ function FriendResult({
   onRetake: () => void;
   onScores: () => void;
 }) {
+  const router = useRouter();
+  const resetCreator = useQuizStore((s) => s.resetCreator);
+  const setStep = useQuizStore((s) => s.setStep);
+
   const pct = score / TOTAL_QUESTIONS;
-  let msg = tr.resultLow;
-  let bear = "/bear-female.png";
-  if (pct === 1) {
-    msg = tr.resultPerfect;
-    bear = "/bear-trophy.png";
+  const isLow = pct <= 0.3;
+  const isPerfect = pct === 1;
+
+  // score-specific reaction line + emoji
+  let reaction = tr.resultGood;
+  let reactionEmoji = "😊";
+  if (isPerfect) {
+    reaction = tr.resultPerfect;
+    reactionEmoji = "🎉";
   } else if (pct >= 0.7) {
-    msg = tr.resultGreat;
-    bear = "/bear-male.png";
-  } else if (pct >= 0.4) {
-    msg = tr.resultGood;
-    bear = "/bear-female.png";
-  } else if (pct <= 0.2) {
-    msg = tr.resultFake;
-    bear = "/bear-male.png";
+    reaction = tr.resultGreat;
+    reactionEmoji = "💕";
+  } else if (isLow) {
+    reaction = tr.resultFake;
+    reactionEmoji = "🚫";
+  } else if (pct <= 0.4) {
+    reaction = tr.resultLow;
+    reactionEmoji = "🤔";
   }
 
   const shareUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/?quiz=${quizId}`
       : "";
-  const shareText = `I scored ${score}/${TOTAL_QUESTIONS} on ${creatorName}'s friendship dare quiz! 😎 Are we real or fake friends? Take it: ${shareUrl}`;
+  const shareText = `I scored ${score}/${TOTAL_QUESTIONS} on ${creatorName}'s friendship dare quiz! ${reactionEmoji} Are we real or fake friends? Take it: ${shareUrl}`;
 
   const shareScore = async () => {
     if (navigator.share) {
@@ -334,61 +360,147 @@ function FriendResult({
     }
   };
 
+  // viral loop: friend becomes a creator
+  const createOwn = () => {
+    playWhoosh();
+    resetCreator();
+    setStep("create");
+    router.push("/?page=create");
+  };
+
+  const close = () => {
+    playWhoosh();
+    router.push("/");
+  };
+
+  // the "block" word gets highlighted; rest of the message is plain
+  const findBlock = tr.findBlockFakeFriends.split("block");
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <AppHeader />
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pb-6">
-        <div className="relative mt-2 overflow-hidden rounded-[2rem] border-4 border-white bg-white/90 p-6 text-center shadow-xl shadow-pink-200/50 animate-pop-in">
-          <span className="absolute right-4 top-4 text-2xl animate-twinkle">✨</span>
-          <span className="absolute left-4 top-8 text-xl">🎉</span>
-          <img src={bear} alt="" className="mx-auto h-32 w-32 drop-shadow-lg animate-bounce-soft" />
-          <p className="text-sm font-bold uppercase tracking-wide text-slate-400">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-6">
+      {/* confetti for good scores */}
+      {!isLow && <Confetti burstKey={quizId + score} count={isPerfect ? 60 : 36} />}
+
+      {/* modal card */}
+      <div
+        className={`relative z-20 w-full max-w-md rounded-[2rem] border-4 border-white bg-white/95 p-5 text-center shadow-2xl shadow-pink-200/60 ${
+          isLow ? "animate-shake" : "animate-pop-in"
+        }`}
+      >
+        {/* close X */}
+        <button
+          onClick={close}
+          aria-label={tr.close}
+          className="absolute -right-2 -top-2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-fuchsia-500 text-white shadow-lg ring-4 ring-white transition hover:scale-110 active:scale-95"
+        >
+          <span className="text-lg font-bold">✕</span>
+        </button>
+
+        {/* score tape + notebook paper card */}
+        <div className="relative mx-auto -mt-10 mb-1 w-fit">
+          <span className="block -rotate-2 rounded-md bg-amber-300 px-4 py-1 text-xs font-extrabold uppercase tracking-wide text-slate-700 shadow-md ring-1 ring-amber-400">
             {tr.yourScore}
-          </p>
-          <p className="my-1 text-6xl font-extrabold">
-            <span className="bg-gradient-to-r from-pink-500 to-fuchsia-500 bg-clip-text text-transparent">
+          </span>
+        </div>
+
+        <div className="relative mx-auto mb-2 w-fit rounded-2xl bg-gradient-to-b from-sky-50 to-white px-7 py-3 shadow-inner ring-1 ring-sky-100">
+          <p className="text-5xl font-extrabold leading-none">
+            <span
+              className={
+                isLow
+                  ? "bg-gradient-to-r from-slate-500 to-slate-700 bg-clip-text text-transparent"
+                  : "bg-gradient-to-r from-sky-500 to-blue-600 bg-clip-text text-transparent"
+              }
+            >
               {score}
             </span>
             <span className="text-slate-300">/{TOTAL_QUESTIONS}</span>
           </p>
-          {/* score rings */}
-          <div className="mx-auto mb-3 flex justify-center gap-1.5">
-            {Array.from({ length: TOTAL_QUESTIONS }).map((_, i) => (
-              <span
-                key={i}
-                className={`h-2.5 w-2.5 rounded-full ${i < score ? "bg-pink-500" : "bg-slate-200"}`}
-              />
-            ))}
-          </div>
-          <p className="text-base font-bold text-slate-700">{msg}</p>
+          {/* doodles */}
+          <span className="absolute -left-1 top-1 text-sm animate-twinkle">✦</span>
+          <span className="absolute -right-1 bottom-1 text-sm animate-twinkle">✦</span>
+          <span className="absolute right-2 top-0 text-[10px] text-pink-300">▲</span>
         </div>
 
+        {/* logo */}
+        <div className="mb-1 flex items-center justify-center gap-1.5">
+          <img src="/bear-male.png" alt="" className="h-8 w-8 drop-shadow" />
+          <span className="text-xl font-extrabold leading-none">
+            <span className="text-slate-700">Don&apos;t</span>{" "}
+            <span className="bg-gradient-to-r from-pink-500 to-fuchsia-500 bg-clip-text text-transparent">Block</span>{" "}
+            <span className="text-sky-500">Me</span>
+          </span>
+          <img src="/bear-female.png" alt="" className="h-8 w-8 drop-shadow" />
+        </div>
+
+        {/* bears hero illustration in a phone-window */}
+        <div className="relative mx-auto mb-3 max-w-[220px] overflow-hidden rounded-2xl bg-gradient-to-b from-sky-100 to-emerald-50 p-2 ring-1 ring-sky-100">
+          <span className="absolute left-2 top-1 text-xs animate-twinkle">✨</span>
+          <span className="absolute right-2 top-1 text-xs">💗</span>
+          <img
+            src="/bears-hero.png"
+            alt="two bears on their phones"
+            className="w-full drop-shadow-md"
+          />
+          {/* ground */}
+          <div className="h-2 w-full rounded-b-2xl bg-emerald-200/60" />
+        </div>
+
+        {/* reaction message */}
+        <p className="mb-1 text-base font-extrabold text-slate-800">
+          {reactionEmoji} {reaction}
+        </p>
+
+        {/* find & block your fake friends */}
+        <p className="mb-3 text-lg font-extrabold leading-tight text-slate-800">
+          {findBlock[0]}
+          <span className="marker-highlight">{tr.findBlockFakeFriends.includes("block") ? "block" : ""}</span>
+          {findBlock.slice(1).join("block")}
+        </p>
+
+        {/* primary CTA: create your own quiz (viral loop) */}
         <button
-          onClick={shareScore}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500 px-6 py-4 text-lg font-bold text-white shadow-lg shadow-pink-300 transition hover:scale-[1.02] active:scale-95"
+          onClick={createOwn}
+          className="group flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-4 text-lg font-extrabold text-white shadow-lg shadow-sky-300 transition hover:scale-[1.02] active:scale-95"
         >
-          {tr.shareMyScore}
+          {tr.createYourQuiz}
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/25 transition group-hover:translate-x-1">
+            <ArrowRight className="h-4 w-4" />
+          </span>
         </button>
 
-        <div className="mt-3 grid grid-cols-2 gap-3">
+        {/* secondary actions */}
+        <div className="mt-3 grid grid-cols-3 gap-2">
           <button
-            onClick={onRetake}
-            className="flex items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-bold text-slate-600 shadow-md ring-1 ring-black/5 transition hover:scale-[1.02] active:scale-95"
+            onClick={shareScore}
+            className="flex flex-col items-center gap-1 rounded-2xl bg-pink-50 px-2 py-2.5 text-[11px] font-bold text-pink-600 shadow-sm ring-1 ring-pink-100 transition hover:scale-105 active:scale-95"
           >
-            <RotateCcw className="h-4 w-4" />
-            {tr.tryAgain}
+            <span className="text-base">📤</span>
+            {tr.shareMyScore}
           </button>
           <button
             onClick={onScores}
-            className="flex items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-bold text-slate-600 shadow-md ring-1 ring-black/5 transition hover:scale-[1.02] active:scale-95"
+            className="flex flex-col items-center gap-1 rounded-2xl bg-amber-50 px-2 py-2.5 text-[11px] font-bold text-amber-600 shadow-sm ring-1 ring-amber-100 transition hover:scale-105 active:scale-95"
           >
-            <Trophy className="h-4 w-4 text-amber-500" />
+            <span className="text-base">🏆</span>
             {tr.checkScores}
+          </button>
+          <button
+            onClick={onRetake}
+            className="flex flex-col items-center gap-1 rounded-2xl bg-sky-50 px-2 py-2.5 text-[11px] font-bold text-sky-600 shadow-sm ring-1 ring-sky-100 transition hover:scale-105 active:scale-95"
+          >
+            <span className="text-base">🔁</span>
+            {tr.tryAgain}
           </button>
         </div>
 
+        <p className="mt-3 text-xs font-semibold text-slate-400">{tr.nowYourTurn}</p>
+      </div>
+
+      {/* ad slot below modal */}
+      <div className="mx-auto mt-4 w-full max-w-md">
         <AdBanner />
-      </main>
+      </div>
     </div>
   );
 }

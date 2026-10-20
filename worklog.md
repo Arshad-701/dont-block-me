@@ -31,3 +31,28 @@ Stage Summary:
 - Fully working viral friendship quiz app on the single / route using query-param routing (?page=create|creating|share|scoreboard and ?quiz=ID)
 - Production-ready, Vercel-deployable (Prisma/SQLite used instead of Firebase per sandbox constraints)
 - All 6 user-flow pages functional, multi-language (10 langs), SEO + per-quiz dynamic OG, ad placeholders in place
+
+---
+Task ID: sound+result-redesign
+Agent: main-orchestrator (Z.ai Code)
+Task: Add sound effects/tap sounds throughout + redesign the friend result page to match the new screenshot (confetti, bears-hero, "create your quiz" viral-loop CTA, "now it's your turn")
+
+Work Log:
+- Extracted frames from the 70s screen recording + analyzed the new reference screenshot (Screenshot 2026-10-20 121557.png) via VLM to extract the target result-page design
+- Built a Web Audio API synthesized sound engine (src/lib/sounds.ts): playTap (sweep pop), playSelect (two-note ding), playPop, playWhoosh (frequency sweep), playBack, playSuccess (C-E-G-C ascending chime + sparkle), playFail (descending sawtooth buzzer), playReveal, playError — no audio files needed
+- Added soundOn boolean (persisted) to the quiz store
+- Built SoundManager component with a global pointerdown listener that plays tap on any button/link/[data-tap], honoring data-sound="select|pop|back|none" overrides; mounted in QuizApp
+- Built SoundToggle (speaker icon) added to landing header + AppHeader (next to language chip)
+- Tagged option buttons with data-sound="select" in QuizCreator + FriendQuiz so they play the pleasant select ding instead of a generic tap
+- Added playWhoosh on every step/page transition (create→gender→creating, question auto-advance, skip, back, name→questions, share→scoreboard, create-your-quiz viral loop)
+- Added playSuccess on creator finishing Q10; playReveal + playSuccess/playFail on friend result reveal (based on score)
+- Built CSS Confetti component (falling emoji + color pieces, random drift/rotate/sway) with globals.css keyframes (confetti-fall, confetti-sway); also added paper-card, shake-x animations
+- Added 4 new i18n strings (findBlockFakeFriends, nowYourTurn, createYourQuiz, close) to Translation type + en (inherited by other languages)
+- Completely redesigned FriendResult to match the screenshot: centered white modal with pink X close button, "your score" yellow tape banner, notebook-paper score card (X/10 in blue for high / slate for low), "Don't Block Me" logo with bear mascots, two-bears-with-phones illustration in a sky window, score-specific reaction (true bestie / fake friend alert), "find & block your fake friends" with yellow-highlighted "block", prominent blue "create your quiz" CTA (viral loop), 3 secondary buttons (share score / check scores / try again), "now, it's your turn" footer text, confetti for high scores (60 pieces if perfect), shake animation for low scores
+- Wired the viral loop: "create your quiz" resets creator state + navigates to /?page=create
+- Fixed confetti z-index (z-0 behind card; card z-20) so confetti frames the card without obscuring text
+- Lint clean. Verified end-to-end with Agent Browser at 390x844: high-score result (10/10) shows confetti + "true bestie" + create-your-quiz CTA; low-score result (0/10) shows shake + "Fake friend alert" + no confetti; viral loop navigates to create flow; no page errors
+
+Stage Summary:
+- Tap sounds + transition/reveal sound effects now play throughout the app (mutable via header speaker toggle, persisted)
+- Friend result page redesigned to match the reference screenshot: cute modal with score card, two-bears illustration, "find & block your fake friends" message, prominent "create your quiz" CTA (viral loop), confetti for high scores / shake for low scores, close button, "now it's your turn" footer

@@ -170,3 +170,36 @@
   padding: 0 4px;
   border-radius: 4px;
 }
+
+/* confetti animations */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) translateX(var(--drift, 0)) rotate(var(--rot, 360deg));
+    opacity: 0;
+  }
+}
+@keyframes confetti-sway {
+  0% { transform: translateX(-12px) rotate(-12deg); }
+  100% { transform: translateX(12px) rotate(12deg); }
+}
+
+/* notebook paper tape banner */
+.paper-card {
+  background:
+    linear-gradient(white, white) padding-box,
+    repeating-linear-gradient(transparent 0 22px, #fde2f3 22px 23px) border-box;
+}
+
+/* shake animation for low score */
+@keyframes shake-x {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+.animate-shake { animation: shake-x 0.5s ease-in-out; }

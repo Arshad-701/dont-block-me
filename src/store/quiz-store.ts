@@ -15,6 +15,10 @@ type QuizStore = {
   lang: string;
   setLang: (lang: string) => void;
 
+  // sound
+  soundOn: boolean;
+  setSoundOn: (v: boolean) => void;
+
   // creator info
   creatorName: string;
   creatorGender: "male" | "female" | null;
@@ -57,6 +61,9 @@ export const useQuizStore = create<QuizStore>()(
     (set, get) => ({
       lang: "en",
       setLang: (lang) => set({ lang }),
+
+      soundOn: true,
+      setSoundOn: (soundOn) => set({ soundOn }),
 
       creatorName: "",
       creatorGender: null,
@@ -105,7 +112,7 @@ export const useQuizStore = create<QuizStore>()(
     }),
     {
       name: "dont-block-me",
-      partialize: (s) => ({ lang: s.lang }),
+      partialize: (s) => ({ lang: s.lang, soundOn: s.soundOn }),
     }
   )
 );

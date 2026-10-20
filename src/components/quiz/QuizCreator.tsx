@@ -10,6 +10,7 @@ import { useQuizStore } from "@/store/quiz-store";
 import { t } from "@/lib/i18n";
 import { QUESTIONS, TOTAL_QUESTIONS } from "@/lib/quiz-data";
 import { toast } from "sonner";
+import { playWhoosh, playSuccess } from "@/lib/sounds";
 
 export function QuizCreator() {
   const router = useRouter();
@@ -40,7 +41,12 @@ export function QuizCreator() {
     setAnswer(current, optIdx);
     // auto-advance after a short delay for nice feel (except last)
     if (!isLast) {
-      setTimeout(() => setCurrent(current + 1), 280);
+      setTimeout(() => {
+        playWhoosh();
+        setCurrent(current + 1);
+      }, 280);
+    } else {
+      playSuccess();
     }
   };
 
@@ -48,12 +54,14 @@ export function QuizCreator() {
     if (isLast) {
       void submit();
     } else {
+      playWhoosh();
       setCurrent(current + 1);
     }
   };
 
   const skip = () => {
     // mark as skipped (-1 stays), move on
+    playWhoosh();
     if (!isLast) setCurrent(current + 1);
     else void submit();
   };
@@ -111,6 +119,7 @@ export function QuizCreator() {
               return (
                 <button
                   key={idx}
+                  data-sound="select"
                   onClick={() => choose(idx)}
                   className={`relative flex flex-col items-center gap-2 overflow-hidden rounded-3xl p-4 shadow-md ring-1 transition hover:scale-[1.03] active:scale-95 ${
                     active

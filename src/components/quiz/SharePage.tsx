@@ -8,6 +8,7 @@ import { AdBanner } from "./AdBanner";
 import { useQuizStore } from "@/store/quiz-store";
 import { t } from "@/lib/i18n";
 import { toast } from "sonner";
+import { playWhoosh, playPop } from "@/lib/sounds";
 
 export function SharePage({ quizId }: { quizId: string }) {
   const router = useRouter();
@@ -61,6 +62,7 @@ export function SharePage({ quizId }: { quizId: string }) {
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
+      playPop();
       toast.success(tr.copied);
       setTimeout(() => setCopied(false), 1800);
     } catch {
@@ -85,6 +87,7 @@ export function SharePage({ quizId }: { quizId: string }) {
   };
 
   const goScores = () => {
+    playWhoosh();
     setStep("scoreboard");
     router.push(`/?page=scoreboard&quiz=${quizId}`);
   };

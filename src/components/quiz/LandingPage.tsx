@@ -4,9 +4,11 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, PenLine, Share2, Trophy, Sparkles, Heart, Info } from "lucide-react";
 import { Logo } from "./AppHeader";
 import { LanguageDropdown } from "./LanguageDropdown";
+import { SoundToggle } from "./SoundToggle";
 import { AdBanner } from "./AdBanner";
 import { useQuizStore } from "@/store/quiz-store";
 import { t } from "@/lib/i18n";
+import { playWhoosh } from "@/lib/sounds";
 
 export function LandingPage() {
   const router = useRouter();
@@ -16,6 +18,7 @@ export function LandingPage() {
   const tr = t(lang);
 
   const startCreate = () => {
+    playWhoosh();
     resetCreator();
     setStep("create");
     router.push("/?page=create");
@@ -28,7 +31,10 @@ export function LandingPage() {
         <div className="scale-95">
           <Logo size="md" />
         </div>
-        <LanguageDropdown />
+        <div className="flex items-center gap-2">
+          <SoundToggle />
+          <LanguageDropdown />
+        </div>
       </header>
 
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pb-6">

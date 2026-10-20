@@ -7,6 +7,7 @@ import { AppHeader } from "./AppHeader";
 import { AdBanner } from "./AdBanner";
 import { useQuizStore } from "@/store/quiz-store";
 import { t } from "@/lib/i18n";
+import { playWhoosh } from "@/lib/sounds";
 
 const MAX_NAME = 15;
 
@@ -26,11 +27,15 @@ export function NameGenderPage() {
   );
 
   const goToGender = () => {
-    if (creatorName.trim().length > 0) setPhase("gender");
+    if (creatorName.trim().length > 0) {
+      playWhoosh();
+      setPhase("gender");
+    }
   };
 
   const goToCreating = () => {
     if (!creatorGender) return;
+    playWhoosh();
     setCurrentQuestion(0);
     setStep("creating");
     router.push("/?page=creating");
