@@ -227,3 +227,35 @@ Stage Summary:
 - Speech bubbles are now anchored directly above each speaking character's head (relative to the character container, bottom-[112%] left-0/right-0) with a downward CSS pointer arrow — no longer at the viewport top.
 - The user's custom sticker-style panda + brown bear transparent PNGs (extracted from their screenshots via #DDEEFF chroma-key) are used as the character assets.
 - Framer Motion drives all motion: speaking-character bounce during dialogue (y:[0,-8,0]), and per-tier reactions exactly per the provided JSON spec (LOW: panda slides right x:[0,120,200] + bear pushed off-screen-left x:[0,-150,-350]/rotate:-45/opacity:0; MID: happy jump y:[0,-20,0]; HIGH: run together + hug x:[0,±80] scale 1.1).
+
+---
+Task ID: fix-logo-add-mood-images
+Agent: main-orchestrator (Z.ai Code)
+Task: Fix the half-cut logo in the character images (from using the user's screenshots directly) + add 2-3 mood-based character images per score/tier
+
+Work Log:
+- Root cause of "half-cut logo": I had chroma-keyed the user's reference screenshots directly, which still contained a half-cut app logo/button artifact in the corner. The regenerated AI characters also showed a perceived "N logo" which was actually the Next.js dev-indicator overlay badge (dev-mode only, not part of the images).
+- Regenerated 6 CLEAN sticker-style character PNGs via AI image-generation on a pure #00FF00 chroma-key background (no logo, no watermark), then chroma-keyed green→transparent with PIL (g-max(r,b) metric, feathered alpha, bbox trim). All verified clean: "no logo/watermark/UI button, white sticker outline intact".
+  * public/avatars/panda-idle.png (clean idle panda)
+  * public/avatars/bear-idle.png (clean idle bear)
+  * public/avatars/bear-crying.png (LOW mood — sad bear with tears)
+  * public/avatars/panda-happy.png (MID/HIGH mood — joyful smile)
+  * public/avatars/bear-happy.png (MID/HIGH mood — joyful smile)
+  * public/avatars/both-hug.png (HIGH mood — panda+bear hugging with love hearts)
+- Removed the old logo'd panda.png/bear.png and the green source files.
+- Updated the Characters component to accept pandaSrc/bearSrc props (default to the clean idle assets) so the character image can swap per phase.
+- TierPhase now switches the character IMAGES per tier (mood-based), not just the motion:
+  * LOW (<5): panda-idle (pushes via motion) + bear-crying (sad) — bear src confirmed /avatars/bear-crying.png
+  * MID (5-8): panda-happy + bear-happy (both joyful)
+  * HIGH (9-10): single both-hug asset centered (the hugging-pair payoff) with a pop-in, plus rising hearts + confetti — src confirmed /avatars/both-hug.png
+- Disabled the Next.js dev-indicator badge (devIndicators: false in next.config.ts) so the corner "N" overlay no longer appears during preview (it was being mistaken for a logo).
+- Dialogue/Counter phases use the clean panda-idle + bear-idle.
+
+Verification (Agent Browser, mobile 390x844, quiz cmvga3dq20000vhw1vp4he582):
+- LOW: bear img src = /avatars/bear-crying.png ✓; VLM: bear showing sad/crying expression with tears ✓; panda present ✓; clean light-blue canvas with clouds, no card box ✓; no unwanted logo/badge (only the intentional Skip button top-right) ✓.
+- HIGH: img src = /avatars/both-hug.png ✓; VLM: hugging panda+bear pair centered ✓, hearts + confetti ✓, "Best Friend Forever" bubble ✓, clean canvas no card ✓.
+- Lint clean, no page errors.
+
+Stage Summary:
+- Fixed the half-cut logo: characters are now clean AI-generated transparent sticker-style PNGs (no logo/watermark). Also disabled the Next.js dev-indicator "N" badge that was being mistaken for a logo.
+- Added mood-based images that swap per score tier: LOW shows a crying bear, MID shows happy panda+bear, HIGH shows a hugging pair. Combined with the per-tier Framer Motion, the characters now visibly change expression AND motion based on the score/mood.

@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  // hide the Next.js dev indicator badge so it doesn't appear as a "logo"
+  // in the corner during preview
+  devIndicators: false,
 };
 
 export default nextConfig;

@@ -478,11 +478,15 @@ function Characters({
   bear,
   pandaBubble,
   bearBubble,
+  pandaSrc = "/avatars/panda-idle.png",
+  bearSrc = "/avatars/bear-idle.png",
 }: {
   panda: CharMotion;
   bear: CharMotion;
   pandaBubble?: ReactNode;
   bearBubble?: ReactNode;
+  pandaSrc?: string;
+  bearSrc?: string;
 }) {
   return (
     <>
@@ -498,7 +502,7 @@ function Characters({
           </div>
         )}
         <img
-          src="/avatars/panda.png"
+          src={pandaSrc}
           alt="Bubu the panda"
           className="w-28 drop-shadow-lg sm:w-36"
         />
@@ -515,7 +519,7 @@ function Characters({
           </div>
         )}
         <img
-          src="/avatars/bear.png"
+          src={bearSrc}
           alt="Dudu the bear"
           className="w-28 drop-shadow-lg sm:w-36"
         />
@@ -758,13 +762,41 @@ function TierPhase({
           transition: { duration: 0.8, times: [0, 1], delay: 0.3, ease: "easeOut" },
         };
 
+  // Per-tier mood images: the character assets swap based on the score tier
+  // so the panda/bear visibly change expression (idle → crying → happy → hug).
+  const pandaSrc =
+    tier === "low"
+      ? "/avatars/panda-idle.png"
+      : "/avatars/panda-happy.png";
+  const bearSrc =
+    tier === "low"
+      ? "/avatars/bear-crying.png"
+      : "/avatars/bear-happy.png";
+
   return (
     <>
       {tier === "high" && <HeartsBurst />}
       {tier === "high" && <Confetti burstKey={"tier" + score} count={50} />}
 
-      {/* two transparent characters on the canvas; per-tier Framer Motion sliding */}
-      <Characters panda={panda} bear={bear} />
+      {tier === "high" ? (
+        // HIGH: single hugging-pair asset centered (the "hug" payoff)
+        <motion.img
+          src="/avatars/both-hug.png"
+          alt="Bubu and Dudu hugging"
+          className="absolute bottom-8 left-1/2 w-44 -translate-x-1/2 drop-shadow-lg sm:bottom-12 sm:w-52"
+          initial={{ scale: 0.6, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.7, ease: "easeOut", delay: 0.2 }}
+        />
+      ) : (
+        // LOW / MID: two transparent characters on the canvas; per-tier mood + motion
+        <Characters
+          panda={panda}
+          bear={bear}
+          pandaSrc={pandaSrc}
+          bearSrc={bearSrc}
+        />
+      )}
 
       {/* tier speech bubble (centered above characters) */}
       <div className="absolute inset-x-0 top-[12%] z-10 flex justify-center px-6">
