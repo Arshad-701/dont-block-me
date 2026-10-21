@@ -1,0 +1,40 @@
+{
+  "completion_animation_config": {
+    "character_assets": {
+      "panda_idle": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjEx.../giphy.gif",
+      "bear_idle": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjEx.../giphy.gif",
+      "panda_push_bear": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjEx.../giphy.gif",
+      "bear_crying": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjEx.../giphy.gif",
+      "hug_celebration": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjEx.../giphy.gif"
+    },
+    "score_thresholds": [
+      {
+        "tier": "low",
+        "min_score": 0,
+        "max_score": 4,
+        "dialogue_end": "bye bye!... I will block you... hph 😡",
+        "animation_action": "SLIDE_PUSH_OUT_LEFT",
+        "panda_gif": "panda_push_bear",
+        "bear_gif": "bear_crying"
+      },
+      {
+        "tier": "mid",
+        "min_score": 5,
+        "max_score": 8,
+        "dialogue_end": "Hmm... Not bad! You know me well! 🤔",
+        "animation_action": "HIGH_FIVE_BOUNCE",
+        "panda_gif": "panda_idle",
+        "bear_gif": "bear_idle"
+      },
+      {
+        "tier": "high",
+        "min_score": 9,
+        "max_score": 10,
+        "dialogue_end": "WOW! You really are my Best Friend Forever! ❤️✨",
+        "animation_action": "HUG_AND_HEARTS",
+        "panda_gif": "hug_celebration",
+        "bear_gif": "hug_celebration"
+      }
+    ]
+  }
+}

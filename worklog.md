@@ -146,3 +146,32 @@ Verification (Agent Browser, mobile 390x844, quiz cmvga3dq20000vhw1vp4he582):
 
 Stage Summary:
 - Static PNG character stickers replaced with real animated Bubu & Dudu GIFs (sourced from Tenor, self-hosted in /public/avatars/ for reliability). A single dynamic <img src={currentGifUrl} /> now switches automatically per phase: idle (sitting/blinking) in dialogue+counter, then low (pushing away) / mid (thinking) / high (hugging+love) in the tier reaction. Existing layout, colors, typewriter dialogue, score counter, SFX, and Phase 4 actions modal are preserved.
+
+---
+Task ID: architecture-rewrite-transparent-canvas
+Agent: main-orchestrator (Z.ai Code)
+Task: Critical architecture rewrite of end-game animation page — replace rectangular GIF cards with two SEPARATE transparent character assets on a full-screen light-blue canvas with sliding motion per the block.youtest.me DOM architecture
+
+Work Log:
+- Removed the rectangular Tenor GIF cards (idle/low/mid/high.gif) — they had backgrounds + watermarks, violating the "no boxed image cards" requirement. Deleted those GIFs.
+- Generated clean SEPARATE transparent character assets via AI image-generation on a solid chroma-key green (#00FF00) background (panda + brown bear, no outline/sticker border), then chroma-keyed green→transparent with PIL (greenness metric = max(0, g - max(r,b)) with feathered alpha + bbox trim). Verified both are true RGBA with clean transparent backgrounds (panda 81% opaque, bear 77% opaque, no green box). Saved public/avatars/panda.png + bear.png.
+- Rewrote the FriendResult scene to the exact requested DOM architecture:
+  * Full-screen light-blue canvas (bg-[#DDEEFF]) with floating cloud SVGs (Clouds component), NO card/border/wrapper around characters
+  * Characters component renders TWO SEPARATE transparent <img> elements placed directly on the canvas: <img id="panda" absolute bottom-left> + <img id="bear" absolute bottom-right>, object-contain, drop-shadow — no rectangular wrapper
+  * Removed GrassPlatform (green bar card) entirely
+- Phase 1 (dialogue 0-4s): transparent panda+bear idle (anim-idle-bob float/sway/breath) + typewriter speech bubble CENTERED above (SpeechBubble side="center", centered tail)
+- Phase 2 (counter 4-6s): paper score card slides DOWN from top (anim-slide-down keyframe) + idle characters
+- Phase 3 (tier reactions): sliding applied directly to the two transparent character assets (CSS @keyframes = Framer-Motion-equivalent; Framer Motion motion.img transforms were unreliable in this Next 16/React 19 SSR/hydration setup, verified earlier):
+  * LOW (<5): panda anim-low-panda (translateX [0,80,160] push right) + bear anim-low-bear (translateX -320, opacity 0, rotate -20deg — pushed off-screen to the left) + "bye bye I will block you" bubble
+  * MID (5-8): panda nod-jump + bear happy-bounce + "Not bad" bubble
+  * HIGH (9-10): panda anim-hug-creator (translateX +150) + bear anim-hug-friend (translateX -150) run to center + scale bounce + HeartsBurst (rising hearts) + Confetti + "Best Friend Forever" bubble
+- Added CSS @keyframes: low-panda-push, low-bear-pushed, slide-down (to globals.css). Re-added HeartsBurst (rising hearts via heart-rise).
+- Diagnosed + fixed a CSS build staleness issue: the new @keyframes weren't in the served CSS because the dev server had a stale CSS compile. Restarted the dev server (setsid+exec, run within long-lived bash calls since background processes die at call boundaries in this env) to force a fresh compile — confirmed all new keyframes (low-panda-push, low-bear-pushed, slide-down) are now in the served CSS.
+- Verification (Agent Browser, mobile 390x844, quiz cmvga3dq20000vhw1vp4he582, all dev run inside single long-lived bash calls):
+  * LOW (0/10): panda transform matrix translateX(160) [pushed right per spec], bear transform matrix translateX(-146) opacity 0.54 rotate ~9deg [being pushed off-screen left, mid-flight → ends at -320/opacity 0]. VLM: full light-blue canvas with clouds, NO rectangular card/box, two separate transparent panda+bear assets placed directly on canvas, "bye bye I will block you" bubble.
+  * HIGH (10/10): panda matrix translateX(150) scale 1.1 + bear matrix translateX(-150) scale 1.1 [ran to center, hugging] + rising hearts + confetti + "Best Friend Forever" bubble.
+  * Dialogue phase: idle transparent chars on canvas + centered typewriter bubble captured.
+  * Lint clean, POST /api/response 200, no page errors.
+
+Stage Summary:
+- End-game animation page rewritten to the requested DOM architecture: full-screen #DDEEFF canvas with floating clouds (no card), two SEPARATE transparent character <img> elements (panda left, bear right) placed directly on the canvas (no rectangular wrappers/borders), and per-phase sliding motion. Phase 1 typewriter dialogue, Phase 2 paper score card slides down from top, Phase 3 LOW panda-push(x[0,80,160]) + bear-pushed-off-left(x:-300,opacity:0,rotate:-20), MID nod/bounce, HIGH run-to-center-hug + rising hearts. Framer-Motion-equivalent CSS @keyframes used (Framer Motion transforms unreliable in this SSR/hydration setup).

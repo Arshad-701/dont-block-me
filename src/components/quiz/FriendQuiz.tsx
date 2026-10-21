@@ -441,11 +441,82 @@ function SkipButton({ onClick, label }: { onClick: () => void; label: string }) 
   );
 }
 
-function GrassPlatform() {
+function Cloud({ className = "" }: { className?: string }) {
   return (
-    <div className="relative z-0 w-full max-w-md">
-      <div className="h-3 w-full rounded-full bg-emerald-300/80 shadow-inner" />
-      <div className="-mt-1 h-2 w-full rounded-b-3xl bg-emerald-400/60" />
+    <svg
+      viewBox="0 0 64 40"
+      className={`absolute fill-white drop-shadow-[0_8px_16px_rgba(0,0,0,0.05)] ${className}`}
+      aria-hidden
+    >
+      <path d="M16 40c-6.6 0-12-5.4-12-12 0-5.2 3.3-9.6 7.9-11.3C13.4 7.9 19 3 26 3c6.2 0 11.3 3.8 13.5 9.1.9-.2 1.9-.4 2.9-.4 6.1 0 11 4.9 11 11s-4.9 11-11 11H16z" />
+    </svg>
+  );
+}
+
+function Clouds() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <Cloud className="left-[5%] top-[8%] w-24 animate-float-slow" />
+      <Cloud className="right-[6%] top-[16%] w-28 animate-float" />
+      <Cloud className="left-[34%] top-[5%] w-20 animate-float-slower" />
+      <Cloud className="right-[28%] bottom-[14%] w-24 animate-float-slow opacity-80" />
+    </div>
+  );
+}
+
+// Two separate transparent character assets placed directly on the stage
+// canvas — NO card / border / rectangular wrapper around the characters.
+function Characters({
+  pandaClass = "",
+  bearClass = "",
+}: {
+  pandaClass?: string;
+  bearClass?: string;
+}) {
+  return (
+    <>
+      <img
+        id="panda"
+        src="/avatars/panda.png"
+        alt="Bubu the panda"
+        className={`absolute bottom-8 left-3 w-32 object-contain drop-shadow-lg sm:bottom-12 sm:left-16 sm:w-40 ${pandaClass}`}
+      />
+      <img
+        id="bear"
+        src="/avatars/bear.png"
+        alt="Dudu the bear"
+        className={`absolute bottom-8 right-3 w-32 object-contain drop-shadow-lg sm:bottom-12 sm:right-16 sm:w-40 ${bearClass}`}
+      />
+    </>
+  );
+}
+
+// Rising hearts overlay for the high-tier celebration.
+function HeartsBurst() {
+  const hearts = Array.from({ length: 18 }).map((_, i) => ({
+    left: 10 + Math.random() * 80,
+    top: 30 + Math.random() * 50,
+    delay: Math.random() * 1.6,
+    size: 16 + Math.random() * 22,
+    dur: 1.8 + Math.random() * 1.6,
+    i,
+  }));
+  return (
+    <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
+      {hearts.map((h) => (
+        <span
+          key={h.i}
+          className="absolute"
+          style={{
+            left: `${h.left}%`,
+            top: `${h.top}%`,
+            fontSize: `${h.size}px`,
+            animation: `heart-rise ${h.dur}s ease-in-out ${h.delay}s infinite`,
+          }}
+        >
+          💕
+        </span>
+      ))}
     </div>
   );
 }
@@ -484,12 +555,13 @@ function DialoguePhase({
     return () => clearTimeout(timer);
   }, [i]);
 
-  const isA = i % 2 === 0; // 0,2,4 = creator (left)
-
   return (
     <>
-      {/* speech bubble area */}
-      <div className="absolute inset-x-0 top-[15%] flex justify-center px-6">
+      {/* two transparent characters directly on the canvas (no card) */}
+      <Characters pandaClass="anim-idle-bob" bearClass="anim-idle-bob-slow" />
+
+      {/* typewriter speech bubble centered above characters */}
+      <div className="absolute inset-x-0 top-[14%] z-10 flex justify-center px-6">
         <AnimatePresence mode="wait">
           <motion.div
             key={i}
@@ -497,12 +569,10 @@ function DialoguePhase({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.9 }}
             transition={{ duration: 0.25 }}
-            className={`flex w-full max-w-sm ${
-              isA ? "justify-start" : "justify-end"
-            }`}
+            className="flex w-full max-w-sm justify-center"
           >
-            <SpeechBubble side={isA ? "left" : "right"}>
-              <p className="text-base font-bold text-slate-800">
+            <SpeechBubble side="center">
+              <p className="text-center text-base font-bold text-slate-800">
                 {typed}
                 <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse bg-slate-400 align-middle" />
               </p>
@@ -510,16 +580,6 @@ function DialoguePhase({
           </motion.div>
         </AnimatePresence>
       </div>
-
-      {/* animated Bubu & Dudu (single GIF, both characters) */}
-      <div className="relative z-10 flex w-full max-w-md justify-center px-2">
-        <img
-          src="/avatars/idle.gif"
-          alt="Bubu and Dudu"
-          className="h-48 w-48 drop-shadow-lg sm:h-56 sm:w-56"
-        />
-      </div>
-      <GrassPlatform />
     </>
   );
 }
@@ -550,14 +610,18 @@ function CounterPhase({
 
   return (
     <>
-      <div className="absolute inset-x-0 top-[16%] flex justify-center px-6">
-        <div className="w-full max-w-sm animate-pop-in text-center">
+      {/* two transparent characters directly on the canvas (idle) */}
+      <Characters pandaClass="anim-idle-bob" bearClass="anim-idle-bob-slow" />
+
+      {/* paper score card slides down from the top */}
+      <div className="absolute inset-x-0 top-[14%] z-10 flex justify-center px-6">
+        <div className="w-full max-w-sm anim-slide-down text-center">
           <div className="relative mx-auto w-fit">
             <span className="block -rotate-2 rounded-md bg-amber-300 px-4 py-1 text-xs font-extrabold uppercase tracking-wide text-slate-700 shadow-md ring-1 ring-amber-400">
               {tr.yourScore}
             </span>
           </div>
-          <div className="relative mx-auto mt-1 w-fit rounded-2xl bg-gradient-to-b from-sky-50 to-white px-8 py-3 shadow-inner ring-1 ring-sky-100">
+          <div className="relative mx-auto mt-1 w-fit rounded-2xl bg-white px-8 py-3 shadow-xl ring-1 ring-sky-100">
             <p className="text-5xl font-extrabold leading-none">
               <span className="bg-gradient-to-r from-sky-500 to-blue-600 bg-clip-text text-transparent">
                 {n}
@@ -569,15 +633,6 @@ function CounterPhase({
           </div>
         </div>
       </div>
-
-      <div className="relative z-10 flex w-full max-w-md justify-center px-2">
-        <img
-          src="/avatars/idle.gif"
-          alt="Bubu and Dudu"
-          className="h-48 w-48 drop-shadow-lg sm:h-56 sm:w-56"
-        />
-      </div>
-      <GrassPlatform />
     </>
   );
 }
@@ -593,8 +648,6 @@ function TierPhase({
   onDone: () => void;
 }) {
   const tier = tierOf(score);
-  // animated Bubu & Dudu reaction GIF switches per tier
-  const gifUrl = `/avatars/${tier}.gif`;
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -610,7 +663,7 @@ function TierPhase({
         timers.push(setTimeout(playHeartPop, d))
       );
     }
-    const end = setTimeout(onDone, 4000);
+    const end = setTimeout(onDone, 4200);
     timers.push(end);
     return () => timers.forEach(clearTimeout);
   }, []);
@@ -618,12 +671,32 @@ function TierPhase({
   const bubbleText =
     tier === "low" ? tr.tierLowMsg : tier === "mid" ? tr.tierMidMsg : tr.tierHighMsg;
 
+  // Per-tier sliding motion applied directly to the transparent character
+  // assets (Framer-Motion-equivalent keyframes; CSS @keyframes used for
+  // reliability in this Next 16 + React 19 SSR/hydration setup).
+  const pandaClass =
+    tier === "low"
+      ? "anim-low-panda"
+      : tier === "mid"
+      ? "anim-hf-creator"
+      : "anim-hug-creator";
+  const bearClass =
+    tier === "low"
+      ? "anim-low-bear"
+      : tier === "mid"
+      ? "anim-hf-friend"
+      : "anim-hug-friend";
+
   return (
     <>
-      {tier === "high" && <Confetti burstKey={"tier" + score} count={60} />}
+      {tier === "high" && <HeartsBurst />}
+      {tier === "high" && <Confetti burstKey={"tier" + score} count={50} />}
 
-      {/* tier speech bubble (centered) */}
-      <div className="absolute inset-x-0 top-[12%] flex justify-center px-6">
+      {/* two transparent characters on the canvas; per-tier sliding */}
+      <Characters pandaClass={pandaClass} bearClass={bearClass} />
+
+      {/* tier speech bubble (centered above characters) */}
+      <div className="absolute inset-x-0 top-[12%] z-10 flex justify-center px-6">
         <div className="flex w-full max-w-sm animate-pop-in justify-center">
           <SpeechBubble side="center">
             <p className="text-center text-base font-extrabold text-slate-800">
@@ -632,23 +705,6 @@ function TierPhase({
           </SpeechBubble>
         </div>
       </div>
-
-      {/* animated reaction GIF — switches automatically per tier */}
-      <div className="relative z-10 flex w-full max-w-md justify-center px-2">
-        <img
-          key={gifUrl}
-          src={gifUrl}
-          alt={
-            tier === "low"
-              ? "Bubu pushing Dudu away"
-              : tier === "mid"
-              ? "Bubu and Dudu thinking"
-              : "Bubu and Dudu hugging"
-          }
-          className="h-52 w-52 drop-shadow-lg sm:h-60 sm:w-60"
-        />
-      </div>
-      <GrassPlatform />
     </>
   );
 }
@@ -899,7 +955,9 @@ function FriendResult({
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-end px-4 pb-8">
+    <div className="relative min-h-screen overflow-hidden bg-[#DDEEFF]">
+      {/* full-screen light-blue canvas with floating clouds */}
+      <Clouds />
       <SkipButton onClick={goActions} label={tr.skipIntro} />
       {phase === "dialogue" && (
         <DialoguePhase
