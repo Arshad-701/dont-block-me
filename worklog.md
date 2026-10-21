@@ -175,3 +175,28 @@ Work Log:
 
 Stage Summary:
 - End-game animation page rewritten to the requested DOM architecture: full-screen #DDEEFF canvas with floating clouds (no card), two SEPARATE transparent character <img> elements (panda left, bear right) placed directly on the canvas (no rectangular wrappers/borders), and per-phase sliding motion. Phase 1 typewriter dialogue, Phase 2 paper score card slides down from top, Phase 3 LOW panda-push(x[0,80,160]) + bear-pushed-off-left(x:-300,opacity:0,rotate:-20), MID nod/bounce, HIGH run-to-center-hug + rising hearts. Framer-Motion-equivalent CSS @keyframes used (Framer Motion transforms unreliable in this SSR/hydration setup).
+
+---
+Task ID: framer-motion-character-motion
+Agent: main-orchestrator (Z.ai Code)
+Task: Fix static character issue — add real Framer Motion translation motion + per-phase animation switching so panda/bear visibly move during dialogue, score reveal, and tier reactions
+
+Work Log:
+- Root cause of "static" complaint: characters were static transparent PNGs animated only by subtle CSS keyframes (and an earlier CSS-build staleness made them fully static). Rewrote to drive ALL character motion with Framer Motion `motion.img` `animate` props, which (with a clean rewrite + fresh dev server) now reliably apply transforms in this Next 16 + React 19 setup (earlier failures were due to stale bundle / conflicting CSS classes / wrong sampling time).
+- Rewrote the Characters component to accept Framer Motion `{ animate, transition }` props for panda + bear, rendering `<motion.img id="panda" ... animate={panda.animate} transition={panda.transition} />` and `<motion.img id="bear" ... />` (NO CSS anim-* classes, no src switching — the motion itself changes per phase).
+- Imported `TargetAndTransition` + `Transition` types from framer-motion for clean typing.
+- Phase 1 (dialogue) + Phase 2 (counter): panda `animate={{ y: [0,-12,0], rotate:[0,-2,0] }}` + bear `animate={{ y:[0,-10,0], rotate:[0,2,0] }}` with `repeat: Infinity` — continuous, visible floating/breathing bounce.
+- Phase 3 (tier) per-tier Framer Motion sliding applied directly to the two transparent character assets:
+  * LOW (<5): panda `animate={{ x: [0,80,160] }}` (pushes forward), bear `animate={{ x:[0,0,-300], opacity:[1,1,0], rotate:[0,0,-20] }}` (pushed off-screen left, faded, rotated) — EXACTLY the user's spec values.
+  * MID (5-8): panda `animate={{ rotate:[0,10,-10,0], y:[0,-20,0] }}` (nod+jump), bear happy bounce, repeating.
+  * HIGH (9-10): panda `animate={{ x:[0,150], scale:[1,1.2,1] }}` + bear `animate={{ x:[0,-150], scale:[1,1.2,1] }}` (run to center + scale-bounce hug), one-shot.
+- GIF-switch note: I did NOT switch the img src per tier (no per-tier transparent animated GIFs available). Instead the Framer Motion `animate` switches per phase — the characters visibly change pose/motion (idle bounce → push → nod → hug) when the score is revealed, which fulfills the "change their pose/animation when the score is revealed" requirement via motion rather than asset-swap.
+
+Verification (Agent Browser, mobile 390x844, quiz cmvga3dq20000vhw1vp4he582, dev run inside long-lived bash calls):
+- Idle (dialogue): panda computed transform oscillated matrix(...,0,-9.35) → -9.86 → -0.18 (continuous bounce + slight rotate) — NOT static.
+- LOW (0/10): panda matrix translateX(160) [spec x:[0,80,160]→160 ✓], bear matrix translateX(-300) opacity 0 rotate -20deg [spec x:-300, opacity:0, rotate:-20 ✓✓✓ exact]. VLM: panda visibly animated, bear pushed off-screen (gone).
+- HIGH (10/10): panda matrix translateX(150) + bear matrix translateX(-150) [both ran to center, hugged ✓].
+- Lint clean, no page errors.
+
+Stage Summary:
+- Static-character complaint resolved: the panda & bear now have continuous Framer Motion translation motion (idle floating/breathing bounce during dialogue + score reveal, and per-tier sliding reactions — LOW panda-push x:[0,80,160] + bear-pushed-off-left x:-300/opacity:0/rotate:-20, MID nod+jump, HIGH run-to-center-hug). Same transparent PNG assets; the `animate` values switch per phase so the characters visibly change pose/motion when the score is revealed. Verified via computed transforms that Framer Motion now applies the translations exactly.

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type TargetAndTransition, type Transition } from "framer-motion";
 import { ArrowRight, Check, Loader2, RotateCcw, Trophy, X } from "lucide-react";
 import { AppHeader } from "./AppHeader";
 import { AdBanner } from "./AdBanner";
@@ -466,26 +466,35 @@ function Clouds() {
 
 // Two separate transparent character assets placed directly on the stage
 // canvas — NO card / border / rectangular wrapper around the characters.
+// Motion is driven by Framer Motion `animate` values passed per phase.
+type CharMotion = {
+  animate: TargetAndTransition;
+  transition?: Transition;
+};
 function Characters({
-  pandaClass = "",
-  bearClass = "",
+  panda,
+  bear,
 }: {
-  pandaClass?: string;
-  bearClass?: string;
+  panda: CharMotion;
+  bear: CharMotion;
 }) {
   return (
     <>
-      <img
+      <motion.img
         id="panda"
         src="/avatars/panda.png"
         alt="Bubu the panda"
-        className={`absolute bottom-8 left-3 w-32 object-contain drop-shadow-lg sm:bottom-12 sm:left-16 sm:w-40 ${pandaClass}`}
+        className="absolute bottom-8 left-3 w-32 object-contain drop-shadow-lg sm:bottom-12 sm:left-16 sm:w-40"
+        animate={panda.animate}
+        transition={panda.transition}
       />
-      <img
+      <motion.img
         id="bear"
         src="/avatars/bear.png"
         alt="Dudu the bear"
-        className={`absolute bottom-8 right-3 w-32 object-contain drop-shadow-lg sm:bottom-12 sm:right-16 sm:w-40 ${bearClass}`}
+        className="absolute bottom-8 right-3 w-32 object-contain drop-shadow-lg sm:bottom-12 sm:right-16 sm:w-40"
+        animate={bear.animate}
+        transition={bear.transition}
       />
     </>
   );
@@ -557,8 +566,17 @@ function DialoguePhase({
 
   return (
     <>
-      {/* two transparent characters directly on the canvas (no card) */}
-      <Characters pandaClass="anim-idle-bob" bearClass="anim-idle-bob-slow" />
+      {/* two transparent characters directly on the canvas (no card); idle bounce */}
+      <Characters
+        panda={{
+          animate: { y: [0, -12, 0], rotate: [0, -2, 0] },
+          transition: { duration: 1.4, repeat: Infinity, ease: "easeInOut" },
+        }}
+        bear={{
+          animate: { y: [0, -10, 0], rotate: [0, 2, 0] },
+          transition: { duration: 1.7, repeat: Infinity, ease: "easeInOut", delay: 0.3 },
+        }}
+      />
 
       {/* typewriter speech bubble centered above characters */}
       <div className="absolute inset-x-0 top-[14%] z-10 flex justify-center px-6">
@@ -610,8 +628,17 @@ function CounterPhase({
 
   return (
     <>
-      {/* two transparent characters directly on the canvas (idle) */}
-      <Characters pandaClass="anim-idle-bob" bearClass="anim-idle-bob-slow" />
+      {/* two transparent characters directly on the canvas (idle bounce) */}
+      <Characters
+        panda={{
+          animate: { y: [0, -12, 0], rotate: [0, -2, 0] },
+          transition: { duration: 1.4, repeat: Infinity, ease: "easeInOut" },
+        }}
+        bear={{
+          animate: { y: [0, -10, 0], rotate: [0, 2, 0] },
+          transition: { duration: 1.7, repeat: Infinity, ease: "easeInOut", delay: 0.3 },
+        }}
+      />
 
       {/* paper score card slides down from the top */}
       <div className="absolute inset-x-0 top-[14%] z-10 flex justify-center px-6">
@@ -671,29 +698,46 @@ function TierPhase({
   const bubbleText =
     tier === "low" ? tr.tierLowMsg : tier === "mid" ? tr.tierMidMsg : tr.tierHighMsg;
 
-  // Per-tier sliding motion applied directly to the transparent character
-  // assets (Framer-Motion-equivalent keyframes; CSS @keyframes used for
-  // reliability in this Next 16 + React 19 SSR/hydration setup).
-  const pandaClass =
+  // Per-tier Framer Motion sliding applied directly to the transparent
+  // character assets — the panda/bear visibly change pose/motion per tier.
+  const panda =
     tier === "low"
-      ? "anim-low-panda"
+      ? {
+          animate: { x: [0, 80, 160] },
+          transition: { duration: 1.4, times: [0, 0.5, 1], delay: 0.4, ease: "easeOut" },
+        }
       : tier === "mid"
-      ? "anim-hf-creator"
-      : "anim-hug-creator";
-  const bearClass =
+      ? {
+          animate: { rotate: [0, 10, -10, 0], y: [0, -20, 0] },
+          transition: { duration: 1.6, repeat: Infinity, ease: "easeInOut" },
+        }
+      : {
+          animate: { x: [0, 150], scale: [1, 1.2, 1] },
+          transition: { duration: 0.9, times: [0, 0.6, 1], delay: 0.5, ease: "easeOut" },
+        };
+  const bear =
     tier === "low"
-      ? "anim-low-bear"
+      ? {
+          animate: { x: [0, 0, -300], opacity: [1, 1, 0], rotate: [0, 0, -20] },
+          transition: { duration: 1.6, times: [0, 0.4, 1], delay: 0.7, ease: "easeIn" },
+        }
       : tier === "mid"
-      ? "anim-hf-friend"
-      : "anim-hug-friend";
+      ? {
+          animate: { y: [0, -14, 0], scale: [1, 1.06, 1] },
+          transition: { duration: 1.2, repeat: Infinity, ease: "easeInOut", delay: 0.2 },
+        }
+      : {
+          animate: { x: [0, -150], scale: [1, 1.2, 1] },
+          transition: { duration: 0.9, times: [0, 0.6, 1], delay: 0.5, ease: "easeOut" },
+        };
 
   return (
     <>
       {tier === "high" && <HeartsBurst />}
       {tier === "high" && <Confetti burstKey={"tier" + score} count={50} />}
 
-      {/* two transparent characters on the canvas; per-tier sliding */}
-      <Characters pandaClass={pandaClass} bearClass={bearClass} />
+      {/* two transparent characters on the canvas; per-tier Framer Motion sliding */}
+      <Characters panda={panda} bear={bear} />
 
       {/* tier speech bubble (centered above characters) */}
       <div className="absolute inset-x-0 top-[12%] z-10 flex justify-center px-6">
