@@ -392,9 +392,12 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
 // Phase 3: 3-tier animation · Phase 4: action buttons + scoreboard CTA
 type RevealPhase = "dialogue" | "counter" | "tier" | "actions";
 
+// Tier boundaries scale proportionally with the question count so the
+// low / mid / high moods stay balanced regardless of TOTAL_QUESTIONS.
 function tierOf(score: number): "low" | "mid" | "high" {
-  if (score < 5) return "low";
-  if (score < 9) return "mid";
+  const pct = score / TOTAL_QUESTIONS;
+  if (pct < 0.5) return "low";
+  if (pct < 0.85) return "mid";
   return "high";
 }
 

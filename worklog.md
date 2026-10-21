@@ -281,3 +281,26 @@ Verification (Agent Browser):
 
 Stage Summary:
 - Mobile overflow fixed: the LOW-tier panda no longer slides out of the right edge on small phones (motion amplitude reduced to stay in-frame), the bear's off-screen push is clipped cleanly, and a global `overflow-x:hidden` on html/body guarantees no horizontal scroll anywhere. Verified on 320px (iPhone SE) and 390px.
+
+---
+Task ID: expand-to-15-questions-skip-safe
+Agent: main-orchestrator (Z.ai Code)
+Task: Add alternative quiz questions (total 15-20) so skipping a question never causes an issue
+
+Work Log:
+- Added 5 new friendship-quiz questions to src/lib/quiz-data.ts (Q11–Q15: go-to drink, late-night habit, party vibe, dream pet, secret weakness), each with 4 emoji+text options and gradient colors. TOTAL_QUESTIONS is now 15 (was 10), derived from QUESTIONS.length (single source of truth).
+- Made the question count dynamic everywhere it was hardcoded to 10/9:
+  * src/store/quiz-store.ts: emptyAnswers() now uses Array(TOTAL_QUESTIONS).fill(-1); nextQuestion() bound changed from Math.min(...,9) to Math.min(..., TOTAL_QUESTIONS - 1). Imported TOTAL_QUESTIONS.
+  * src/app/api/quiz/route.ts + src/app/api/response/route.ts: zod validation .length(10) → .length(TOTAL_QUESTIONS). Imported TOTAL_QUESTIONS.
+- Fixed the actual "skip issue": the API validation was z.number().int().min(0).max(3), which REJECTED skipped answers (skipped = -1). So if a creator skipped a question, POST /api/quiz failed validation and the quiz was never created. Changed to .min(-1).max(3) in both routes so skipped answers (-1) are accepted. The scoring loop already handles -1 (skipped creator answers never match the friend's 0-3 answers, so they're just un-scoreable, not an error).
+- Made the tier boundaries scale with the question count so the low/mid/high moods stay balanced at 15: tierOf now uses pct = score/TOTAL_QUESTIONS (low <50%, mid 50-85%, high ≥85%) instead of hardcoded score<5 / score<9.
+
+Verification (Agent Browser, mobile 390x844):
+- Created a 15-question quiz (answered all option 1) → share URL ?page=share&quiz=cmvi2y3ig000qtytim2xaj9yo; POST /api/quiz 200.
+- Friend took the 15-question quiz: step tracker showed "Question 1 of 15" and 15 badges; answered all → POST /api/response 200; result showed "YOUR SCORE 15/15" + "Wow! You're a true bestie!" (high tier).
+- Skip-safe test: creator answered 5 + SKIPPED 10 (skip button) + submitted → quiz created successfully (POST /api/quiz 200, INSERT into Quiz) — no validation error. Previously this would have failed.
+- Lint clean, no page errors.
+
+Stage Summary:
+- Quiz expanded from 10 to 15 questions (5 new alternatives added), with the count made dynamic (TOTAL_QUESTIONS) across the store, both API routes, and the tier logic.
+- Skipping is now safe: the API accepts skipped answers (-1), so a creator/friend who skips questions no longer breaks the quiz creation or submission — the score is simply computed over the answered questions.

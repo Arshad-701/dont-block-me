@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { TOTAL_QUESTIONS } from "@/lib/quiz-data";
 
 export type Step =
   | "home"
@@ -54,7 +55,7 @@ type QuizStore = {
   resetCreator: () => void;
 };
 
-const emptyAnswers = (): number[] => Array(10).fill(-1);
+const emptyAnswers = (): number[] => Array(TOTAL_QUESTIONS).fill(-1);
 
 export const useQuizStore = create<QuizStore>()(
   persist(
@@ -79,7 +80,7 @@ export const useQuizStore = create<QuizStore>()(
       currentQuestion: 0,
       setCurrentQuestion: (currentQuestion) => set({ currentQuestion }),
       nextQuestion: () =>
-        set((s) => ({ currentQuestion: Math.min(s.currentQuestion + 1, 9) })),
+        set((s) => ({ currentQuestion: Math.min(s.currentQuestion + 1, TOTAL_QUESTIONS - 1) })),
       prevQuestion: () =>
         set((s) => ({ currentQuestion: Math.max(s.currentQuestion - 1, 0) })),
 

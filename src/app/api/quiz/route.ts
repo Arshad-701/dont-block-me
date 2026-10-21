@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { TOTAL_QUESTIONS } from "@/lib/quiz-data";
 
 const CreateQuizSchema = z.object({
   creatorName: z.string().min(1).max(15),
   creatorGender: z.enum(["male", "female"]),
   language: z.string().max(8).default("en"),
-  answers: z.array(z.number().int().min(0).max(3)).length(10),
+  // -1 = skipped (allowed so creators can skip questions without breaking)
+  answers: z.array(z.number().int().min(-1).max(3)).length(TOTAL_QUESTIONS),
 });
 
 // POST /api/quiz - create a new quiz

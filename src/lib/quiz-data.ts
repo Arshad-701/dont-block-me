@@ -126,6 +126,61 @@ export const QUESTIONS: QuizQuestion[] = [
       { emoji: "🛍️", text: "Shop till drop", color: "from-fuchsia-300 to-purple-400" },
     ],
   },
+  {
+    id: 11,
+    emoji: "☕",
+    title: "What is {name}'s go-to drink?",
+    options: [
+      { emoji: "☕", text: "Coffee", color: "from-amber-400 to-orange-500" },
+      { emoji: "🧋", text: "Boba Tea", color: "from-rose-300 to-pink-400" },
+      { emoji: "🥤", text: "Cold Soda", color: "from-sky-400 to-blue-500" },
+      { emoji: "🧃", text: "Fresh Juice", color: "from-orange-300 to-amber-400" },
+    ],
+  },
+  {
+    id: 12,
+    emoji: "🌙",
+    title: "What does {name} do late at night?",
+    options: [
+      { emoji: "📱", text: "Scroll phone", color: "from-violet-300 to-purple-400" },
+      { emoji: "📺", text: "Binge series", color: "from-sky-300 to-cyan-400" },
+      { emoji: "🎮", text: "Gaming", color: "from-emerald-300 to-green-400" },
+      { emoji: "📚", text: "Study/Read", color: "from-amber-300 to-yellow-400" },
+    ],
+  },
+  {
+    id: 13,
+    emoji: "🎉",
+    title: "What's {name}'s vibe at a party?",
+    options: [
+      { emoji: "🕺", text: "Life of party", color: "from-fuchsia-400 to-pink-500" },
+      { emoji: "🧱", text: "Wallflower", color: "from-slate-400 to-gray-500" },
+      { emoji: "💃", text: "Dance floor", color: "from-violet-400 to-purple-500" },
+      { emoji: "🍕", text: "At the snacks", color: "from-orange-400 to-red-400" },
+    ],
+  },
+  {
+    id: 14,
+    emoji: "🐾",
+    title: "What pet would {name} adopt?",
+    options: [
+      { emoji: "🐶", text: "A Puppy", color: "from-amber-300 to-orange-400" },
+      { emoji: "🐱", text: "A Kitty", color: "from-slate-400 to-gray-500" },
+      { emoji: "🐰", text: "A Bunny", color: "from-pink-300 to-rose-400" },
+      { emoji: "🐠", text: "A Fish", color: "from-sky-300 to-cyan-400" },
+    ],
+  },
+  {
+    id: 15,
+    emoji: "😱",
+    title: "What's {name}'s secret weakness?",
+    options: [
+      { emoji: "🌶️", text: "Spicy food", color: "from-red-400 to-rose-500" },
+      { emoji: "👻", text: "Horror films", color: "from-violet-400 to-purple-600" },
+      { emoji: "🥶", text: "Cold weather", color: "from-sky-300 to-blue-500" },
+      { emoji: "🎁", text: "Surprises", color: "from-fuchsia-300 to-pink-500" },
+    ],
+  },
 ];
 
 export const TOTAL_QUESTIONS = QUESTIONS.length;

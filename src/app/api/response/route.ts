@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { TOTAL_QUESTIONS } from "@/lib/quiz-data";
 
 const SubmitResponseSchema = z.object({
   quizId: z.string().min(1),
   friendName: z.string().min(1).max(15),
-  answers: z.array(z.number().int().min(0).max(3)).length(10),
+  // -1 allowed too (defensive; the friend flow requires an answer, but allow -1 just in case)
+  answers: z.array(z.number().int().min(-1).max(3)).length(TOTAL_QUESTIONS),
 });
 
 // POST /api/response - submit a friend's answers and compute score
