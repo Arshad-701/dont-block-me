@@ -173,7 +173,7 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6">
-        <img src="/bear-female.png" alt="" className="h-24 w-24 animate-bounce-soft" />
+        <img src="/avatars/panda-idle.png" alt="" className="h-24 w-24 animate-bounce-soft" />
         <p className="flex items-center gap-2 font-bold text-slate-600">
           <Loader2 className="h-4 w-4 animate-spin" /> loading your dare…
         </p>
@@ -221,7 +221,7 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
           <div className="flex flex-1 flex-col items-center justify-center py-6 animate-pop-in">
             <div className="relative mb-3">
               <img
-                src={quiz.creatorGender === "male" ? "/bear-male.png" : "/bear-female.png"}
+                src={quiz.creatorGender === "male" ? "/avatars/bear-idle.png" : "/avatars/panda-idle.png"}
                 alt="creator bear"
                 className="h-32 w-32 drop-shadow-lg animate-wiggle"
               />
@@ -299,7 +299,7 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
                     <Check className="h-4 w-4" />
                   </span>
                 )}
-                <img src="/bear-idle.png" alt={tr.male} className="h-28 w-28 drop-shadow-md" />
+                <img src="/avatars/bear-idle.png" alt={tr.male} className="h-28 w-28 drop-shadow-md" />
                 <span className="text-base font-extrabold text-slate-700">{tr.male}</span>
               </button>
               <button
@@ -315,7 +315,7 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
                     <Check className="h-4 w-4" />
                   </span>
                 )}
-                <img src="/panda-idle.png" alt={tr.female} className="h-28 w-28 drop-shadow-md" />
+                <img src="/avatars/panda-idle.png" alt={tr.female} className="h-28 w-28 drop-shadow-md" />
                 <span className="text-base font-extrabold text-slate-700">{tr.female}</span>
               </button>
             </div>
