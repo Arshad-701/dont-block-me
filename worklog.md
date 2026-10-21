@@ -200,3 +200,30 @@ Verification (Agent Browser, mobile 390x844, quiz cmvga3dq20000vhw1vp4he582, dev
 
 Stage Summary:
 - Static-character complaint resolved: the panda & bear now have continuous Framer Motion translation motion (idle floating/breathing bounce during dialogue + score reveal, and per-tier sliding reactions — LOW panda-push x:[0,80,160] + bear-pushed-off-left x:-300/opacity:0/rotate:-20, MID nod+jump, HIGH run-to-center-hug). Same transparent PNG assets; the `animate` values switch per phase so the characters visibly change pose/motion when the score is revealed. Verified via computed transforms that Framer Motion now applies the translations exactly.
+
+---
+Task ID: bubble-positioning-character-motion-v2
+Agent: main-orchestrator (Z.ai Code)
+Task: Fix speech-bubble alignment (above each character's head, not viewport top) + use the user's custom sticker-style panda/bear transparent PNGs + Framer Motion motion per the provided JSON spec
+
+Work Log:
+- Analyzed the user's uploaded reference: gemini-code JSON (structured dialogue + score_evaluation motion spec), 2 screenshots (the user's custom panda + brown bear avatars on a #DDEEFF canvas), and video GIF.mp4 frames (confirming bubble positioned directly above the speaking character's head with a downward pointer arrow).
+- Extracted the user's custom characters as transparent PNGs: chroma-keyed the exact #DDEEFF background (221,238,255) from the two screenshots (color-distance key, dist<8 → transparent) so the user's sticker-style panda + bear (white border + drop shadow intact) became true RGBA transparent assets. Replaced public/avatars/panda.png + bear.png with the user's actual characters (VLM confirmed: cleanly cut out, no box, no UI buttons).
+- Restructured the Characters component: each character is now a positioned `motion.div` container (absolute bottom-left for panda, bottom-right for bear) holding the <img>, so a speech bubble can be anchored relative to the container. The bubble is rendered as a child at `absolute bottom-[112%] left-0` (above panda head) or `right-0` (above bear head), with the SpeechBubble's CSS pointer arrow (rotated square at -bottom-2) pointing DOWN toward the character. Motion (Framer Motion `animate`) is applied to the container so the bubble + character move together.
+- Phase 1 dialogue rewrite: speaker alternates per line (bear = creator on lines 0,2,4 = right; panda = friend on lines 1,3 = left). The typewriter speech bubble is anchored above the SPEAKING character's head (bearBubble when bear speaks, pandaBubble when panda speaks), with the arrow pointing down to that character. The speaking character does a subtle floating bounce `animate={{ y:[0,-8,0] }} transition={{ duration:0.9, repeat:Infinity }}`; the non-speaking character sits still (`{ y:0 }`). Removed the viewport-top centered bubble.
+- Phase 2 (counter): paper score card slides down from the top (anim-slide-down) + characters idle. Unchanged.
+- Phase 3 (tier) motion updated to the EXACT values from the user's JSON spec:
+  * LOW (<5): panda `animate={{ x:[0,120,200] }}` (slides right across stage toward bear); bear `animate={{ x:[0,-150,-350], rotate:[0,-20,-45], opacity:[1,1,0] }}` (pushed completely off-screen left, rotated -45°, faded) — duration 1.2s.
+  * MID (5-8): both `animate={{ y:[0,-20,0] }}` (friendly happy jump, repeat Infinity, duration 0.6).
+  * HIGH (9-10): panda `animate={{ x:[0,80], scale:1.1 }}` + bear `animate={{ x:[0,-80], scale:1.1 }}` (run together + hug).
+- Removed unused AnimatePresence import (dialogue bubble no longer uses cross-fade; it just appears above the speaking character).
+
+Verification (Agent Browser, mobile 390x844, quiz cmvga3dq20000vhw1vp4he582, dev run inside long-lived bash calls):
+- Dialogue (line 1, bear speaking): VLM confirmed speech bubble positioned DIRECTLY ABOVE the bear's head (right side, NOT at viewport top), with a pointer arrow pointing DOWN toward the bear; typewriter text caught mid-type ("sh" of "should I block you?"). Speaking bear bounce verified: computed transform oscillated translateY(-7.5) → -0.4 → -3.57 (y:[0,-8,0]).
+- LOW (0/10): panda computed transform translateX(200) [spec x:[0,120,200]→200 ✓]; bear computed transform translateX(-350) rotate(-45°) opacity 0 [spec x:[0,-150,-350]→-350, rotate:-45, opacity:0 ✓✓✓ exact]. VLM: user's custom sticker panda (white border) on full light-blue canvas with clouds, no card around characters, "bye bye I will block you" bubble.
+- Lint clean, no page errors.
+
+Stage Summary:
+- Speech bubbles are now anchored directly above each speaking character's head (relative to the character container, bottom-[112%] left-0/right-0) with a downward CSS pointer arrow — no longer at the viewport top.
+- The user's custom sticker-style panda + brown bear transparent PNGs (extracted from their screenshots via #DDEEFF chroma-key) are used as the character assets.
+- Framer Motion drives all motion: speaking-character bounce during dialogue (y:[0,-8,0]), and per-tier reactions exactly per the provided JSON spec (LOW: panda slides right x:[0,120,200] + bear pushed off-screen-left x:[0,-150,-350]/rotate:-45/opacity:0; MID: happy jump y:[0,-20,0]; HIGH: run together + hug x:[0,±80] scale 1.1).

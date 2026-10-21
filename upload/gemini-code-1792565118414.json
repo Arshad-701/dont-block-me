@@ -1,0 +1,80 @@
+{
+  "dialogue_sequence": [
+    {
+      "step": 1,
+      "speaker": "creator_bear",
+      "text": "should I block you? 😡",
+      "bubble_position": "above_bear_head",
+      "character_state": {
+        "bear_animation": "bounce_idle",
+        "panda_animation": "sit_idle"
+      }
+    },
+    {
+      "step": 2,
+      "speaker": "friend_panda",
+      "text": "but... I'm not your fake friend 🥺",
+      "bubble_position": "above_panda_head",
+      "character_state": {
+        "bear_animation": "sit_idle",
+        "panda_animation": "bounce_idle"
+      }
+    },
+    {
+      "step": 3,
+      "speaker": "creator_bear",
+      "text": "then prove you're real 😤",
+      "bubble_position": "above_bear_head",
+      "character_state": {
+        "bear_animation": "tilt_head",
+        "panda_animation": "sit_idle"
+      }
+    },
+    {
+      "step": 4,
+      "speaker": "friend_panda",
+      "text": "just look at my score 📊",
+      "bubble_position": "above_panda_head",
+      "character_state": {
+        "bear_animation": "sit_idle",
+        "panda_animation": "point_up"
+      }
+    },
+    {
+      "step": 5,
+      "speaker": "creator_bear",
+      "text": "okay... let's see 🧐",
+      "bubble_position": "above_bear_head",
+      "character_state": {
+        "bear_animation": "think_idle",
+        "panda_animation": "sit_idle"
+      }
+    }
+  ],
+  "score_evaluations": [
+    {
+      "tier": "low",
+      "max_score": 4,
+      "speech_text": "bye bye!... I will block you... hph 😡",
+      "motion_action": "PANDA_PUSH_BEAR_OFFSCREEN",
+      "panda_motion": { "x": [0, 120, 200], "duration": 1.2 },
+      "bear_motion": { "x": [0, -150, -350], "rotate": -45, "opacity": 0, "duration": 1.2 }
+    },
+    {
+      "tier": "mid",
+      "max_score": 8,
+      "speech_text": "Hmm... Not bad! You know me well, but you can do better! 🤔",
+      "motion_action": "FRIENDLY_HAPPY_JUMP",
+      "panda_motion": { "y": [0, -20, 0], "duration": 0.6 },
+      "bear_motion": { "y": [0, -20, 0], "duration": 0.6 }
+    },
+    {
+      "tier": "high",
+      "max_score": 10,
+      "speech_text": "WOW! You really are my Best Friend Forever! ❤️✨",
+      "motion_action": "RUN_TOGETHER_AND_HUG",
+      "panda_motion": { "x": [0, 80], "scale": 1.1 },
+      "bear_motion": { "x": [0, -80], "scale": 1.1 }
+    }
+  ]
+}

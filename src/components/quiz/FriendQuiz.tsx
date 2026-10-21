@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence, type TargetAndTransition, type Transition } from "framer-motion";
+import { motion, type TargetAndTransition, type Transition } from "framer-motion";
 import { ArrowRight, Check, Loader2, RotateCcw, Trophy, X } from "lucide-react";
 import { AppHeader } from "./AppHeader";
 import { AdBanner } from "./AdBanner";
@@ -466,7 +466,9 @@ function Clouds() {
 
 // Two separate transparent character assets placed directly on the stage
 // canvas — NO card / border / rectangular wrapper around the characters.
-// Motion is driven by Framer Motion `animate` values passed per phase.
+// Each character is a positioned motion.div container so a speech bubble can
+// be anchored relative to it (directly above the head). Motion is driven by
+// Framer Motion `animate` values passed per phase.
 type CharMotion = {
   animate: TargetAndTransition;
   transition?: Transition;
@@ -474,28 +476,50 @@ type CharMotion = {
 function Characters({
   panda,
   bear,
+  pandaBubble,
+  bearBubble,
 }: {
   panda: CharMotion;
   bear: CharMotion;
+  pandaBubble?: ReactNode;
+  bearBubble?: ReactNode;
 }) {
   return (
     <>
-      <motion.img
+      <motion.div
         id="panda"
-        src="/avatars/panda.png"
-        alt="Bubu the panda"
-        className="absolute bottom-8 left-3 w-32 object-contain drop-shadow-lg sm:bottom-12 sm:left-16 sm:w-40"
+        className="absolute bottom-6 left-3 sm:bottom-10 sm:left-16"
         animate={panda.animate}
         transition={panda.transition}
-      />
-      <motion.img
+      >
+        {pandaBubble && (
+          <div className="absolute bottom-[112%] left-0 w-max max-w-[80vw]">
+            {pandaBubble}
+          </div>
+        )}
+        <img
+          src="/avatars/panda.png"
+          alt="Bubu the panda"
+          className="w-28 drop-shadow-lg sm:w-36"
+        />
+      </motion.div>
+      <motion.div
         id="bear"
-        src="/avatars/bear.png"
-        alt="Dudu the bear"
-        className="absolute bottom-8 right-3 w-32 object-contain drop-shadow-lg sm:bottom-12 sm:right-16 sm:w-40"
+        className="absolute bottom-6 right-3 sm:bottom-10 sm:right-16"
         animate={bear.animate}
         transition={bear.transition}
-      />
+      >
+        {bearBubble && (
+          <div className="absolute bottom-[112%] right-0 w-max max-w-[80vw]">
+            {bearBubble}
+          </div>
+        )}
+        <img
+          src="/avatars/bear.png"
+          alt="Dudu the bear"
+          className="w-28 drop-shadow-lg sm:w-36"
+        />
+      </motion.div>
     </>
   );
 }
@@ -564,41 +588,40 @@ function DialoguePhase({
     return () => clearTimeout(timer);
   }, [i]);
 
-  return (
-    <>
-      {/* two transparent characters directly on the canvas (no card); idle bounce */}
-      <Characters
-        panda={{
-          animate: { y: [0, -12, 0], rotate: [0, -2, 0] },
-          transition: { duration: 1.4, repeat: Infinity, ease: "easeInOut" },
-        }}
-        bear={{
-          animate: { y: [0, -10, 0], rotate: [0, 2, 0] },
-          transition: { duration: 1.7, repeat: Infinity, ease: "easeInOut", delay: 0.3 },
-        }}
-      />
+  // speaker alternates: lines 0,2,4 = creator Bear (right); 1,3 = friend Panda (left)
+  const bearSpeaking = i % 2 === 0;
+  const pandaSpeaking = !bearSpeaking;
 
-      {/* typewriter speech bubble centered above characters */}
-      <div className="absolute inset-x-0 top-[14%] z-10 flex justify-center px-6">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 12, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.9 }}
-            transition={{ duration: 0.25 }}
-            className="flex w-full max-w-sm justify-center"
-          >
-            <SpeechBubble side="center">
-              <p className="text-center text-base font-bold text-slate-800">
-                {typed}
-                <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse bg-slate-400 align-middle" />
-              </p>
-            </SpeechBubble>
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </>
+  // typewriter speech bubble — anchored directly above the speaking
+  // character's head (bottom-[112%] of its container, left-0 / right-0),
+  // with a CSS pointer arrow pointing down toward that character.
+  const bubble = (
+    <SpeechBubble side={bearSpeaking ? "right" : "left"}>
+      <p className="text-base font-bold text-slate-800">
+        {typed}
+        <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse bg-slate-400 align-middle" />
+      </p>
+    </SpeechBubble>
+  );
+
+  return (
+    <Characters
+      panda={{
+        // the speaking panda does a subtle floating bounce; the other sits still
+        animate: pandaSpeaking ? { y: [0, -8, 0] } : { y: 0 },
+        transition: pandaSpeaking
+          ? { duration: 0.9, repeat: Infinity, ease: "easeInOut" }
+          : { duration: 0.4 },
+      }}
+      bear={{
+        animate: bearSpeaking ? { y: [0, -8, 0] } : { y: 0 },
+        transition: bearSpeaking
+          ? { duration: 0.9, repeat: Infinity, ease: "easeInOut" }
+          : { duration: 0.4 },
+      }}
+      pandaBubble={pandaSpeaking ? bubble : null}
+      bearBubble={bearSpeaking ? bubble : null}
+    />
   );
 }
 
@@ -698,37 +721,41 @@ function TierPhase({
   const bubbleText =
     tier === "low" ? tr.tierLowMsg : tier === "mid" ? tr.tierMidMsg : tr.tierHighMsg;
 
-  // Per-tier Framer Motion sliding applied directly to the transparent
-  // character assets — the panda/bear visibly change pose/motion per tier.
+  // Per-tier Framer Motion values (from the provided JSON spec), applied
+  // directly to the transparent character containers.
   const panda =
     tier === "low"
       ? {
-          animate: { x: [0, 80, 160] },
-          transition: { duration: 1.4, times: [0, 0.5, 1], delay: 0.4, ease: "easeOut" },
+          // LOW: panda slides right across the stage toward the bear
+          animate: { x: [0, 120, 200] },
+          transition: { duration: 1.2, times: [0, 0.5, 1], delay: 0.3, ease: "easeOut" },
         }
       : tier === "mid"
       ? {
-          animate: { rotate: [0, 10, -10, 0], y: [0, -20, 0] },
-          transition: { duration: 1.6, repeat: Infinity, ease: "easeInOut" },
+          // MID: friendly happy jump
+          animate: { y: [0, -20, 0] },
+          transition: { duration: 0.6, repeat: Infinity, ease: "easeInOut" },
         }
       : {
-          animate: { x: [0, 150], scale: [1, 1.2, 1] },
-          transition: { duration: 0.9, times: [0, 0.6, 1], delay: 0.5, ease: "easeOut" },
+          // HIGH: run together + hug
+          animate: { x: [0, 80], scale: 1.1 },
+          transition: { duration: 0.8, times: [0, 1], delay: 0.3, ease: "easeOut" },
         };
   const bear =
     tier === "low"
       ? {
-          animate: { x: [0, 0, -300], opacity: [1, 1, 0], rotate: [0, 0, -20] },
-          transition: { duration: 1.6, times: [0, 0.4, 1], delay: 0.7, ease: "easeIn" },
+          // LOW: bear pushed completely off-screen to the left (block effect)
+          animate: { x: [0, -150, -350], rotate: [0, -20, -45], opacity: [1, 1, 0] },
+          transition: { duration: 1.2, times: [0, 0.5, 1], delay: 0.5, ease: "easeIn" },
         }
       : tier === "mid"
       ? {
-          animate: { y: [0, -14, 0], scale: [1, 1.06, 1] },
-          transition: { duration: 1.2, repeat: Infinity, ease: "easeInOut", delay: 0.2 },
+          animate: { y: [0, -20, 0] },
+          transition: { duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.15 },
         }
       : {
-          animate: { x: [0, -150], scale: [1, 1.2, 1] },
-          transition: { duration: 0.9, times: [0, 0.6, 1], delay: 0.5, ease: "easeOut" },
+          animate: { x: [0, -80], scale: 1.1 },
+          transition: { duration: 0.8, times: [0, 1], delay: 0.3, ease: "easeOut" },
         };
 
   return (
