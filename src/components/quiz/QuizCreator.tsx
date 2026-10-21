@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, SkipForward, Loader2, RotateCcw } from "lucide-react";
+import { ArrowRight, Check, SkipForward, Loader2 } from "lucide-react";
 import { AppHeader } from "./AppHeader";
 import { ProgressBar } from "./ProgressBar";
 import { AdBanner } from "./AdBanner";
 import { useQuizStore } from "@/store/quiz-store";
 import { t } from "@/lib/i18n";
-import { QUESTIONS, TOTAL_QUESTIONS } from "@/lib/quiz-data";
+import { QUESTION_POOL, TOTAL_QUESTIONS } from "@/lib/quiz-data";
 import { toast } from "sonner";
-import { playWhoosh, playSuccess } from "@/lib/sounds";
+import { playWhoosh, playSuccess, playPop } from "@/lib/sounds";
 
 export function QuizCreator() {
   const router = useRouter();
@@ -18,8 +18,10 @@ export function QuizCreator() {
   const tr = t(lang);
   const creatorName = useQuizStore((s) => s.creatorName);
   const creatorGender = useQuizStore((s) => s.creatorGender);
+  const questionSelection = useQuizStore((s) => s.questionSelection);
   const answers = useQuizStore((s) => s.answers);
   const setAnswer = useQuizStore((s) => s.setAnswer);
+  const skipQuestion = useQuizStore((s) => s.skipQuestion);
   const current = useQuizStore((s) => s.currentQuestion);
   const setCurrent = useQuizStore((s) => s.setCurrentQuestion);
   const setQuizId = useQuizStore((s) => s.setQuizId);
@@ -27,8 +29,10 @@ export function QuizCreator() {
 
   const [submitting, setSubmitting] = useState(false);
 
-  const question = QUESTIONS[current];
+  // active question comes from the pool via the selection map
+  const question = QUESTION_POOL[questionSelection[current]] ?? QUESTION_POOL[0];
   const selected = answers[current];
+  const answered = selected !== -1;
   const isLast = current === TOTAL_QUESTIONS - 1;
 
   // guard: need name + gender
@@ -50,7 +54,9 @@ export function QuizCreator() {
     }
   };
 
+  // Continue requires a valid answer — the step never advances on skip
   const next = () => {
+    if (!answered) return;
     if (isLast) {
       void submit();
     } else {
@@ -59,11 +65,11 @@ export function QuizCreator() {
     }
   };
 
+  // Skip does NOT advance or register -1. It replaces the current question
+  // with an unused one drawn from the pool and stays on the same step.
   const skip = () => {
-    // mark as skipped (-1 stays), move on
-    playWhoosh();
-    if (!isLast) setCurrent(current + 1);
-    else void submit();
+    playPop();
+    skipQuestion();
   };
 
   const submit = async () => {
@@ -76,6 +82,7 @@ export function QuizCreator() {
           creatorName,
           creatorGender,
           language: lang,
+          questionSelection,
           answers,
         }),
       });
@@ -84,7 +91,7 @@ export function QuizCreator() {
       setQuizId(data.quiz.id);
       setStep("share");
       router.push(`/?page=share&quiz=${data.quiz.id}`);
-    } catch (e) {
+    } catch {
       toast.error("Could not save your quiz. Try again!");
     } finally {
       setSubmitting(false);
@@ -101,8 +108,11 @@ export function QuizCreator() {
       </div>
 
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pb-4">
-        {/* question card */}
-        <div key={current} className="flex flex-1 flex-col animate-pop-in">
+        {/* question card — re-mounts (pop-in) when the question is swapped on skip */}
+        <div
+          key={`${current}-${questionSelection[current]}`}
+          className="flex flex-1 flex-col animate-pop-in"
+        >
           <div className="relative mb-4 flex items-center gap-3">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-3xl shadow-md ring-1 ring-black/5">
               {question.emoji}
@@ -157,8 +167,8 @@ export function QuizCreator() {
             </button>
             <button
               onClick={next}
-              disabled={submitting}
-              className="group flex flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-sky-300 transition hover:scale-[1.02] active:scale-95 disabled:opacity-70"
+              disabled={submitting || !answered}
+              className="group flex flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-sky-300 transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? (
                 <Loader2 className="h-5 w-5 animate-spin" />

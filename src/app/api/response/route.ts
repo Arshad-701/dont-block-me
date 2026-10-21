@@ -6,8 +6,8 @@ import { TOTAL_QUESTIONS } from "@/lib/quiz-data";
 const SubmitResponseSchema = z.object({
   quizId: z.string().min(1),
   friendName: z.string().min(1).max(15),
-  // -1 allowed too (defensive; the friend flow requires an answer, but allow -1 just in case)
-  answers: z.array(z.number().int().min(-1).max(3)).length(TOTAL_QUESTIONS),
+  // friend's selected option index for each of the 10 questions (0-3; friend must answer all)
+  answers: z.array(z.number().int().min(0).max(3)).length(TOTAL_QUESTIONS),
 });
 
 // POST /api/response - submit a friend's answers and compute score

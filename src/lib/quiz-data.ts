@@ -183,4 +183,9 @@ export const QUESTIONS: QuizQuestion[] = [
   },
 ];
 
-export const TOTAL_QUESTIONS = QUESTIONS.length;
+// The full pool of available questions (15+). A quiz only uses TOTAL_QUESTIONS
+// of these at a time; skipped questions are swapped for an unused pool question.
+export const QUESTION_POOL = QUESTIONS;
+
+// Fixed target quiz length — every quiz is always exactly 10 active questions.
+export const TOTAL_QUESTIONS = 10;

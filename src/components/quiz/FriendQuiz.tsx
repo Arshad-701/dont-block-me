@@ -9,7 +9,7 @@ import { AdBanner } from "./AdBanner";
 import { Confetti } from "./Confetti";
 import { useQuizStore } from "@/store/quiz-store";
 import { t } from "@/lib/i18n";
-import { QUESTIONS, TOTAL_QUESTIONS } from "@/lib/quiz-data";
+import { QUESTION_POOL, TOTAL_QUESTIONS } from "@/lib/quiz-data";
 import { toast } from "sonner";
 import {
   playWhoosh,
@@ -33,7 +33,9 @@ type QuizInfo = {
   creatorName: string;
   creatorGender: string;
   language: string;
-  // creator's selected option index per question (-1 if skipped)
+  // the 10 pool-question indices that form this quiz
+  questions: number[];
+  // creator's selected option index per slot (0-3)
   answers: number[];
 };
 
@@ -99,7 +101,9 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
     }
   };
 
-  const question = QUESTIONS[friendCurrent];
+  // active question comes from the pool via the quiz's stored selection
+  const question =
+    QUESTION_POOL[quiz?.questions[friendCurrent] ?? 0] ?? QUESTION_POOL[0];
   const selected = friendAnswers[friendCurrent];
   const isLast = friendCurrent === TOTAL_QUESTIONS - 1;
   const correctIdx = quiz?.answers[friendCurrent] ?? -1;
@@ -392,12 +396,10 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
 // Phase 3: 3-tier animation · Phase 4: action buttons + scoreboard CTA
 type RevealPhase = "dialogue" | "counter" | "tier" | "actions";
 
-// Tier boundaries scale proportionally with the question count so the
-// low / mid / high moods stay balanced regardless of TOTAL_QUESTIONS.
+// Tier boundaries on the fixed 10-question basis (Low <5/10, Mid 5-8/10, High 9-10/10)
 function tierOf(score: number): "low" | "mid" | "high" {
-  const pct = score / TOTAL_QUESTIONS;
-  if (pct < 0.5) return "low";
-  if (pct < 0.85) return "mid";
+  if (score < 5) return "low";
+  if (score < 9) return "mid";
   return "high";
 }
 

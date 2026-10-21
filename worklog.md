@@ -304,3 +304,29 @@ Verification (Agent Browser, mobile 390x844):
 Stage Summary:
 - Quiz expanded from 10 to 15 questions (5 new alternatives added), with the count made dynamic (TOTAL_QUESTIONS) across the store, both API routes, and the tier logic.
 - Skipping is now safe: the API accepts skipped answers (-1), so a creator/friend who skips questions no longer breaks the quiz creation or submission — the score is simply computed over the answered questions.
+
+---
+Task ID: revert-10-pool-skip-replacement
+Agent: main-orchestrator (Z.ai Code)
+Task: Revert to fixed 10-question quiz; keep 15-question pool; implement dynamic random question replacement on skip (stay on step, swap from pool, never register -1)
+
+Work Log:
+- src/lib/quiz-data.ts: kept all 15 questions as QUESTION_POOL (= QUESTIONS); set TOTAL_QUESTIONS = 10 (static target quiz length, decoupled from pool size).
+- prisma/schema.prisma: added `questions String @default("[0,1,2,3,4,5,6,7,8,9]")` to the Quiz model so the creator's 10-question pool selection is stored (default keeps legacy quizzes valid). Ran db:push + db:generate (the Prisma Client had to be regenerated so it knew the `questions` field — fixed a 500 "Unknown argument questions" error).
+- src/store/quiz-store.ts: added `questionSelection: number[]` (10 pool indices) initialised via `randomSelection()` (picks 10 distinct random pool indices). Added `skipQuestion()` which REPLACES the current slot's pool index with an UNUSED pool index (one not in the current selection), resets that slot's answer to -1, and STAYS on the current step (does NOT advance, does NOT register a -1 into a submitted slot). `resetCreator()` now re-rolls a fresh random selection.
+- src/app/api/quiz/route.ts: POST now accepts + validates `questionSelection: number[10]` (each 0..pool-1) AND `answers: number[10]` (each 0-3, no -1 since skip no longer registers skipped slots), and stores both (`questions` + `answers`). GET now returns `questions` (parsed; defaults to 0..9 for legacy rows) alongside `answers`.
+- src/app/api/response/route.ts: reset zod validation to `.length(TOTAL_QUESTIONS)` (=10) with min(0).max(3) (friend must answer all 10 — no skip on the friend side).
+- src/components/quiz/QuizCreator.tsx: active question now comes from `QUESTION_POOL[questionSelection[current]]`. Skip button calls `skipQuestion()` (replaces the current question with an unused pool question, stays on the same step) — verified: Q1 "What pet would X adopt?" → skip → Q1 "What is X's ideal weekend?" (different question, still "Question 1 of 10"). Continue button now requires an answered option (`disabled={!answered}`) so the step never advances on skip. Question card uses `key={current-questionSelection[current]}` so a swapped question re-mounts with a pop-in. Submit sends `questionSelection` + `answers`.
+- src/components/quiz/FriendQuiz.tsx: fetches the quiz's `questions` (10 pool indices) and displays `QUESTION_POOL[quiz.questions[friendCurrent]]`. `correctIdx = quiz.answers[friendCurrent]` (creator's per-slot answer) unchanged. Reverted `tierOf` to the fixed 10-basis: Low <5/10, Mid 5-8/10 (score<9), High 9-10/10.
+
+Verification (Agent Browser, mobile 390x844):
+- Skip-replacement: creator on Q1 "What pet would SkipTest adopt?" → click Skip → Q1 became "What is SkipTest's ideal weekend?" (different pool question) while staying on "Question 1 of 10" ✓.
+- Created a 10-question quiz (skipped Q1, answered all) → POST /api/quiz 200; GET /api/quiz returns questions=[8,9,11,10,13,0,12,7,3,14] (random 10 pool indices, with the skip-replaced Q1) + answers=[0,...,0] (10), both length 10 ✓.
+- Friend took the 10-question quiz (from the stored pool selection) → POST /api/response 200 (submit succeeded) ✓.
+- Lint clean.
+
+Stage Summary:
+- Reverted the quiz to a FIXED 10 active questions (TOTAL_QUESTIONS=10) while keeping a 15-question QUESTION_POOL.
+- Skip now does pool replacement (not advancement): clicking Skip swaps the current question for an unused random pool question and stays on the same step (badge count stuck until a valid answer is selected) — no -1 is ever registered into a submitted slot.
+- The creator's 10-question pool selection is stored (new `questions` column) and replayed to friends, so the friend always answers the exact 10 the creator picked.
+- API validation reset to .length(10); tier thresholds back to 10-basis (<5 / <9 / 9-10).
