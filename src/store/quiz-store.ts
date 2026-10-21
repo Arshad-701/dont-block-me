@@ -49,6 +49,8 @@ type QuizStore = {
   // friend flow
   friendName: string;
   setFriendName: (name: string) => void;
+  friendGender: "male" | "female" | null;
+  setFriendGender: (g: "male" | "female") => void;
   friendAnswers: number[];
   setFriendAnswer: (questionIndex: number, optionIndex: number) => void;
   friendCurrent: number;
@@ -122,6 +124,8 @@ export const useQuizStore = create<QuizStore>()(
 
       friendName: "",
       setFriendName: (friendName) => set({ friendName }),
+      friendGender: null,
+      setFriendGender: (friendGender) => set({ friendGender }),
       friendAnswers: emptyAnswers(),
       setFriendAnswer: (questionIndex, optionIndex) => {
         const friendAnswers = [...get().friendAnswers];

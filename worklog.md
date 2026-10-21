@@ -330,3 +330,29 @@ Stage Summary:
 - Skip now does pool replacement (not advancement): clicking Skip swaps the current question for an unused random pool question and stays on the same step (badge count stuck until a valid answer is selected) — no -1 is ever registered into a submitted slot.
 - The creator's 10-question pool selection is stored (new `questions` column) and replayed to friends, so the friend always answers the exact 10 the creator picked.
 - API validation reset to .length(10); tier thresholds back to 10-basis (<5 / <9 / 9-10).
+
+---
+Task ID: avatar-gender-perspective-sync
+Agent: main-orchestrator (Z.ai Code)
+Task: Sync character avatars, positions, and speech-bubble directions with the chosen genders on the end-game completion screen
+
+Work Log:
+- Generated a panda-crying transparent PNG (chroma-keyed) to complete the mood set. Regenerated the 6 mood images (bear/panda × idle/happy/crying) in 3/4 side-profile facing RIGHT (AI reliably produces profile pandas; bears tend front-facing — accepted the mix). All chroma-keyed transparent.
+- Store (quiz-store.ts): added `friendGender` + `setFriendGender` (the friend now picks a gender avatar when taking the quiz).
+- FriendQuiz: added a new "gender" step to the friend flow (name → gender → questions). The friend picks Male (bear) or Female (panda) via two cards (bear-idle / panda-idle previews), then Continue → questions. onRetake now resets friendGender.
+- Characters component rewritten for gender-synced roles:
+  * LEFT = Creator (Avatar A), id="creator", faces RIGHT (scaleX 1, normal img).
+  * RIGHT = Friend (Avatar B), id="friend", faces LEFT (img has `-scale-x-100` = scaleX(-1) flipped) so both characters look toward each other.
+  * Props renamed to `left`/`right` (motion) + `leftSrc`/`rightSrc` (avatar images) + `leftBubble`/`rightBubble`.
+  * Added `avatarSrc(character, mood)` helper mapping bear/panda × idle/happy/crying → the transparent PNG.
+- DialoguePhase: speaker alternates per line — Creator (LEFT) speaks on lines 0,2,4; Friend (RIGHT) on 1,3. The typewriter bubble is anchored above the SPEAKING character's head (`bottom-[112%] left-0` for creator / `right-0` for friend) with a CSS pointer arrow pointing down. The speaking character does a subtle bounce (y:[0,-8,0]).
+- CounterPhase + TierPhase: take `creatorChar` + `friendChar` and render the synced avatars (idle for counter; per-tier moods for tier — LOW: creator idle + friend crying; MID: both happy; HIGH: both-hug centered).
+- FriendResult: now receives `creatorGender` (from the fetched quiz) + `friendGender` (from the store), maps them to `creatorChar`/`friendChar` (Male→bear, Female→panda), and passes to all phases. FriendQuiz call site passes `creatorGender={quiz.creatorGender}` + `friendGender={friendGender}`.
+
+Verification (Agent Browser, mobile 390x844, creator Male + friend Female):
+- leftSrc = /avatars/bear-idle.png (creator = bear) ✓, rightSrc = /avatars/panda-idle.png (friend = panda) ✓, rightFlipped = true (friend img has -scale-x-100) ✓.
+- VLM: LEFT character is a brown bear, RIGHT character is a panda facing left (toward the bear), speech bubble above a character's head with pointer arrow ✓.
+- Lint clean.
+
+Stage Summary:
+- Character avatars now sync with the chosen genders: Creator (Avatar A) on the LEFT uses the creator's gender avatar (Male→bear / Female→panda); Friend (Avatar B) on the RIGHT uses the friend's chosen gender avatar. The friend is flipped (scaleX -1) so it faces left toward the creator. Speech bubbles are bound to the active speaker (creator→left, friend→right) and anchored directly above that character's head with a downward pointer arrow. The friend flow now includes a gender-selection step (name → gender → questions) so the friend's avatar is chosen.

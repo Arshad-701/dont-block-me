@@ -46,6 +46,8 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
   const tr = t(lang);
   const friendName = useQuizStore((s) => s.friendName);
   const setFriendName = useQuizStore((s) => s.setFriendName);
+  const friendGender = useQuizStore((s) => s.friendGender);
+  const setFriendGender = useQuizStore((s) => s.setFriendGender);
   const friendAnswers = useQuizStore((s) => s.friendAnswers);
   const setFriendAnswer = useQuizStore((s) => s.setFriendAnswer);
   const friendCurrent = useQuizStore((s) => s.friendCurrent);
@@ -56,7 +58,7 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
 
   const [quiz, setQuiz] = useState<QuizInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [phase, setPhase] = useState<"name" | "questions" | "result">("name");
+  const [phase, setPhase] = useState<"name" | "gender" | "questions" | "result">("name");
   const [submitting, setSubmitting] = useState(false);
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -96,9 +98,14 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
   const startQuiz = () => {
     if (friendName.trim().length > 0) {
       playWhoosh();
-      setPhase("questions");
-      setFriendCurrent(0);
+      setPhase("gender");
     }
+  };
+  const goToQuestions = () => {
+    if (!friendGender) return;
+    playWhoosh();
+    setPhase("questions");
+    setFriendCurrent(0);
   };
 
   // active question comes from the pool via the quiz's stored selection
@@ -185,11 +192,14 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
       <FriendResult
         quizId={quizId}
         creatorName={creatorName}
+        creatorGender={quiz?.creatorGender === "male" ? "male" : "female"}
+        friendGender={friendGender ?? "female"}
         score={friendScore}
         tr={tr}
         onRetake={() => {
           setFriendScore(null);
           setFriendCurrent(0);
+          setFriendGender(null);
           // reset answers
           for (let i = 0; i < TOTAL_QUESTIONS; i++) setFriendAnswer(i, -1);
           setPhase("name");
@@ -244,6 +254,76 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
               onClick={startQuiz}
               disabled={friendName.trim().length === 0}
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-4 text-lg font-bold text-white shadow-lg shadow-sky-300 transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {tr.continueBtn}
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/25">
+                <ArrowRight className="h-4 w-4" />
+              </span>
+            </button>
+          </div>
+          <AdBanner />
+        </main>
+      </div>
+    );
+  }
+
+  // ----- GENDER (friend picks their avatar) -----
+  if (phase === "gender") {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <AppHeader />
+        <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pb-6">
+          <div className="flex flex-1 flex-col justify-center py-4 animate-pop-in">
+            <p className="mb-1 text-center text-lg font-bold text-slate-700">
+              {tr.hiName.replace("{name}", friendName)}
+            </p>
+            <p className="mb-5 text-center text-base font-bold text-slate-700">
+              {tr.chooseYour}{" "}
+              <span className="relative inline-block font-extrabold text-sky-500">
+                {tr.gender}
+                <span className="absolute -bottom-1 left-0 h-1 w-full rounded-full bg-orange-400" />
+              </span>
+            </p>
+
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setFriendGender("male")}
+                className={`relative flex flex-col items-center gap-2 rounded-3xl border-4 bg-gradient-to-b from-sky-50 to-white p-5 shadow-md transition hover:scale-[1.03] active:scale-95 ${
+                  friendGender === "male"
+                    ? "border-sky-400 ring-4 ring-sky-300 scale-[1.02]"
+                    : "border-white"
+                }`}
+              >
+                {friendGender === "male" && (
+                  <span className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white shadow-md">
+                    <Check className="h-4 w-4" />
+                  </span>
+                )}
+                <img src="/bear-idle.png" alt={tr.male} className="h-28 w-28 drop-shadow-md" />
+                <span className="text-base font-extrabold text-slate-700">{tr.male}</span>
+              </button>
+              <button
+                onClick={() => setFriendGender("female")}
+                className={`relative flex flex-col items-center gap-2 rounded-3xl border-4 bg-gradient-to-b from-pink-50 to-white p-5 shadow-md transition hover:scale-[1.03] active:scale-95 ${
+                  friendGender === "female"
+                    ? "border-pink-400 ring-4 ring-pink-300 scale-[1.02]"
+                    : "border-white"
+                }`}
+              >
+                {friendGender === "female" && (
+                  <span className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white shadow-md">
+                    <Check className="h-4 w-4" />
+                  </span>
+                )}
+                <img src="/panda-idle.png" alt={tr.female} className="h-28 w-28 drop-shadow-md" />
+                <span className="text-base font-extrabold text-slate-700">{tr.female}</span>
+              </button>
+            </div>
+
+            <button
+              onClick={goToQuestions}
+              disabled={!friendGender}
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-4 text-lg font-bold text-white shadow-lg shadow-sky-300 transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {tr.continueBtn}
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/25">
@@ -469,64 +549,83 @@ function Clouds() {
   );
 }
 
+// Map a character (bear/panda) + mood to its transparent PNG asset.
+function avatarSrc(
+  character: "bear" | "panda",
+  mood: "idle" | "happy" | "crying"
+): string {
+  if (mood === "crying")
+    return character === "bear"
+      ? "/avatars/bear-crying.png"
+      : "/avatars/panda-crying.png";
+  if (mood === "happy")
+    return character === "bear"
+      ? "/avatars/bear-happy.png"
+      : "/avatars/panda-happy.png";
+  return character === "bear"
+    ? "/avatars/bear-idle.png"
+    : "/avatars/panda-idle.png";
+}
+
 // Two separate transparent character assets placed directly on the stage
 // canvas — NO card / border / rectangular wrapper around the characters.
-// Each character is a positioned motion.div container so a speech bubble can
-// be anchored relative to it (directly above the head). Motion is driven by
-// Framer Motion `animate` values passed per phase.
+// LEFT = Creator (faces right, scaleX 1). RIGHT = Friend (faces left, scaleX -1 / flipped)
+// so both characters look at each other during the dialogue.
 type CharMotion = {
   animate: TargetAndTransition;
   transition?: Transition;
 };
 function Characters({
-  panda,
-  bear,
-  pandaBubble,
-  bearBubble,
-  pandaSrc = "/avatars/panda-idle.png",
-  bearSrc = "/avatars/bear-idle.png",
+  left,
+  right,
+  leftBubble,
+  rightBubble,
+  leftSrc,
+  rightSrc,
 }: {
-  panda: CharMotion;
-  bear: CharMotion;
-  pandaBubble?: ReactNode;
-  bearBubble?: ReactNode;
-  pandaSrc?: string;
-  bearSrc?: string;
+  left: CharMotion;
+  right: CharMotion;
+  leftBubble?: ReactNode;
+  rightBubble?: ReactNode;
+  leftSrc: string;
+  rightSrc: string;
 }) {
   return (
     <>
+      {/* CREATOR (Avatar A) — LEFT side, faces right */}
       <motion.div
-        id="panda"
+        id="creator"
         className="absolute bottom-6 left-3 sm:bottom-10 sm:left-16"
-        animate={panda.animate}
-        transition={panda.transition}
+        animate={left.animate}
+        transition={left.transition}
       >
-        {pandaBubble && (
+        {leftBubble && (
           <div className="absolute bottom-[112%] left-0 w-max max-w-[80vw]">
-            {pandaBubble}
+            {leftBubble}
           </div>
         )}
         <img
-          src={pandaSrc}
-          alt="Bubu the panda"
+          src={leftSrc}
+          alt="Creator avatar"
           className="w-28 drop-shadow-lg sm:w-36"
         />
       </motion.div>
+      {/* FRIEND (Avatar B) — RIGHT side, faces left (flipped) */}
       <motion.div
-        id="bear"
+        id="friend"
         className="absolute bottom-6 right-3 sm:bottom-10 sm:right-16"
-        animate={bear.animate}
-        transition={bear.transition}
+        animate={right.animate}
+        transition={right.transition}
       >
-        {bearBubble && (
+        {rightBubble && (
           <div className="absolute bottom-[112%] right-0 w-max max-w-[80vw]">
-            {bearBubble}
+            {rightBubble}
           </div>
         )}
         <img
-          src={bearSrc}
-          alt="Dudu the bear"
-          className="w-28 drop-shadow-lg sm:w-36"
+          src={rightSrc}
+          alt="Friend avatar"
+          className="w-28 -scale-x-100 drop-shadow-lg sm:w-36"
         />
       </motion.div>
     </>
@@ -566,9 +665,13 @@ function HeartsBurst() {
 // ---- Phase 1: sequential typewriter dialogue ----
 function DialoguePhase({
   tr,
+  creatorChar,
+  friendChar,
   onDone,
 }: {
   tr: ReturnType<typeof t>;
+  creatorChar: "bear" | "panda";
+  friendChar: "bear" | "panda";
   onDone: () => void;
 }) {
   const lines = tr.dialogueLines;
@@ -597,15 +700,15 @@ function DialoguePhase({
     return () => clearTimeout(timer);
   }, [i]);
 
-  // speaker alternates: lines 0,2,4 = creator Bear (right); 1,3 = friend Panda (left)
-  const bearSpeaking = i % 2 === 0;
-  const pandaSpeaking = !bearSpeaking;
+  // speaker alternates: lines 0,2,4 = Creator (LEFT avatar); 1,3 = Friend (RIGHT avatar)
+  const creatorSpeaking = i % 2 === 0;
+  const friendSpeaking = !creatorSpeaking;
 
   // typewriter speech bubble — anchored directly above the speaking
   // character's head (bottom-[112%] of its container, left-0 / right-0),
   // with a CSS pointer arrow pointing down toward that character.
   const bubble = (
-    <SpeechBubble side={bearSpeaking ? "right" : "left"}>
+    <SpeechBubble side={creatorSpeaking ? "left" : "right"}>
       <p className="text-base font-bold text-slate-800">
         {typed}
         <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse bg-slate-400 align-middle" />
@@ -615,21 +718,23 @@ function DialoguePhase({
 
   return (
     <Characters
-      panda={{
-        // the speaking panda does a subtle floating bounce; the other sits still
-        animate: pandaSpeaking ? { y: [0, -8, 0] } : { y: 0 },
-        transition: pandaSpeaking
+      leftSrc={avatarSrc(creatorChar, "idle")}
+      rightSrc={avatarSrc(friendChar, "idle")}
+      left={{
+        // the speaking creator does a subtle floating bounce; otherwise still
+        animate: creatorSpeaking ? { y: [0, -8, 0] } : { y: 0 },
+        transition: creatorSpeaking
           ? { duration: 0.9, repeat: Infinity, ease: "easeInOut" }
           : { duration: 0.4 },
       }}
-      bear={{
-        animate: bearSpeaking ? { y: [0, -8, 0] } : { y: 0 },
-        transition: bearSpeaking
+      right={{
+        animate: friendSpeaking ? { y: [0, -8, 0] } : { y: 0 },
+        transition: friendSpeaking
           ? { duration: 0.9, repeat: Infinity, ease: "easeInOut" }
           : { duration: 0.4 },
       }}
-      pandaBubble={pandaSpeaking ? bubble : null}
-      bearBubble={bearSpeaking ? bubble : null}
+      leftBubble={creatorSpeaking ? bubble : null}
+      rightBubble={friendSpeaking ? bubble : null}
     />
   );
 }
@@ -638,10 +743,14 @@ function DialoguePhase({
 function CounterPhase({
   score,
   tr,
+  creatorChar,
+  friendChar,
   onDone,
 }: {
   score: number;
   tr: ReturnType<typeof t>;
+  creatorChar: "bear" | "panda";
+  friendChar: "bear" | "panda";
   onDone: () => void;
 }) {
   const [n, setN] = useState(0);
@@ -662,11 +771,13 @@ function CounterPhase({
     <>
       {/* two transparent characters directly on the canvas (idle bounce) */}
       <Characters
-        panda={{
+        leftSrc={avatarSrc(creatorChar, "idle")}
+        rightSrc={avatarSrc(friendChar, "idle")}
+        left={{
           animate: { y: [0, -12, 0], rotate: [0, -2, 0] },
           transition: { duration: 1.4, repeat: Infinity, ease: "easeInOut" },
         }}
-        bear={{
+        right={{
           animate: { y: [0, -10, 0], rotate: [0, 2, 0] },
           transition: { duration: 1.7, repeat: Infinity, ease: "easeInOut", delay: 0.3 },
         }}
@@ -700,10 +811,14 @@ function CounterPhase({
 function TierPhase({
   score,
   tr,
+  creatorChar,
+  friendChar,
   onDone,
 }: {
   score: number;
   tr: ReturnType<typeof t>;
+  creatorChar: "bear" | "panda";
+  friendChar: "bear" | "panda";
   onDone: () => void;
 }) {
   const tier = tierOf(score);
@@ -732,11 +847,11 @@ function TierPhase({
 
   // Per-tier Framer Motion values (from the provided JSON spec), applied
   // directly to the transparent character containers.
-  const panda =
+  // LEFT = creator, RIGHT = friend.
+  const left =
     tier === "low"
       ? {
-          // LOW: panda slides right toward the bear (mobile-safe amplitude so it
-          // stays fully in-frame on small phones)
+          // LOW: creator slides right toward the friend (mobile-safe amplitude)
           animate: { x: [0, 60, 120] },
           transition: { duration: 1.2, times: [0, 0.5, 1], delay: 0.3, ease: "easeOut" },
         }
@@ -751,10 +866,10 @@ function TierPhase({
           animate: { x: [0, 80], scale: 1.1 },
           transition: { duration: 0.8, times: [0, 1], delay: 0.3, ease: "easeOut" },
         };
-  const bear =
+  const right =
     tier === "low"
       ? {
-          // LOW: bear pushed off-screen to the left (block effect); clipped by
+          // LOW: friend pushed off-screen to the left (block effect); clipped by
           // the scene's overflow-hidden so it never causes horizontal scroll
           animate: { x: [0, -90, -220], rotate: [0, -15, -45], opacity: [1, 1, 0] },
           transition: { duration: 1.2, times: [0, 0.5, 1], delay: 0.5, ease: "easeIn" },
@@ -770,15 +885,15 @@ function TierPhase({
         };
 
   // Per-tier mood images: the character assets swap based on the score tier
-  // so the panda/bear visibly change expression (idle → crying → happy → hug).
-  const pandaSrc =
+  // (LOW: creator idle + friend crying; MID: both happy; HIGH: hug pair).
+  const leftSrc =
     tier === "low"
-      ? "/avatars/panda-idle.png"
-      : "/avatars/panda-happy.png";
-  const bearSrc =
+      ? avatarSrc(creatorChar, "idle")
+      : avatarSrc(creatorChar, "happy");
+  const rightSrc =
     tier === "low"
-      ? "/avatars/bear-crying.png"
-      : "/avatars/bear-happy.png";
+      ? avatarSrc(friendChar, "crying")
+      : avatarSrc(friendChar, "happy");
 
   return (
     <>
@@ -798,10 +913,10 @@ function TierPhase({
       ) : (
         // LOW / MID: two transparent characters on the canvas; per-tier mood + motion
         <Characters
-          panda={panda}
-          bear={bear}
-          pandaSrc={pandaSrc}
-          bearSrc={bearSrc}
+          left={left}
+          right={right}
+          leftSrc={leftSrc}
+          rightSrc={rightSrc}
         />
       )}
 
@@ -1032,6 +1147,8 @@ function ResultActions({
 function FriendResult({
   quizId,
   creatorName,
+  creatorGender,
+  friendGender,
   score,
   tr,
   onRetake,
@@ -1039,12 +1156,19 @@ function FriendResult({
 }: {
   quizId: string;
   creatorName: string;
+  creatorGender: "male" | "female";
+  friendGender: "male" | "female";
   score: number;
   tr: ReturnType<typeof t>;
   onRetake: () => void;
   onScores: () => void;
 }) {
   const [phase, setPhase] = useState<RevealPhase>("dialogue");
+  // map chosen genders to character assets (Male -> bear, Female -> panda)
+  const creatorChar: "bear" | "panda" =
+    creatorGender === "male" ? "bear" : "panda";
+  const friendChar: "bear" | "panda" =
+    friendGender === "male" ? "bear" : "panda";
 
   const goActions = () => {
     playWhoosh();
@@ -1072,6 +1196,8 @@ function FriendResult({
       {phase === "dialogue" && (
         <DialoguePhase
           tr={tr}
+          creatorChar={creatorChar}
+          friendChar={friendChar}
           onDone={() => {
             playWhoosh();
             setPhase("counter");
@@ -1082,6 +1208,8 @@ function FriendResult({
         <CounterPhase
           score={score}
           tr={tr}
+          creatorChar={creatorChar}
+          friendChar={friendChar}
           onDone={() => {
             playWhoosh();
             setPhase("tier");
@@ -1089,7 +1217,13 @@ function FriendResult({
         />
       )}
       {phase === "tier" && (
-        <TierPhase score={score} tr={tr} onDone={goActions} />
+        <TierPhase
+          score={score}
+          tr={tr}
+          creatorChar={creatorChar}
+          friendChar={friendChar}
+          onDone={goActions}
+        />
       )}
     </div>
   );
