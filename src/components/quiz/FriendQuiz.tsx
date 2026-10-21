@@ -730,8 +730,9 @@ function TierPhase({
   const panda =
     tier === "low"
       ? {
-          // LOW: panda slides right across the stage toward the bear
-          animate: { x: [0, 120, 200] },
+          // LOW: panda slides right toward the bear (mobile-safe amplitude so it
+          // stays fully in-frame on small phones)
+          animate: { x: [0, 60, 120] },
           transition: { duration: 1.2, times: [0, 0.5, 1], delay: 0.3, ease: "easeOut" },
         }
       : tier === "mid"
@@ -748,8 +749,9 @@ function TierPhase({
   const bear =
     tier === "low"
       ? {
-          // LOW: bear pushed completely off-screen to the left (block effect)
-          animate: { x: [0, -150, -350], rotate: [0, -20, -45], opacity: [1, 1, 0] },
+          // LOW: bear pushed off-screen to the left (block effect); clipped by
+          // the scene's overflow-hidden so it never causes horizontal scroll
+          animate: { x: [0, -90, -220], rotate: [0, -15, -45], opacity: [1, 1, 0] },
           transition: { duration: 1.2, times: [0, 0.5, 1], delay: 0.5, ease: "easeIn" },
         }
       : tier === "mid"

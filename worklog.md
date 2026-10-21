@@ -259,3 +259,25 @@ Verification (Agent Browser, mobile 390x844, quiz cmvga3dq20000vhw1vp4he582):
 Stage Summary:
 - Fixed the half-cut logo: characters are now clean AI-generated transparent sticker-style PNGs (no logo/watermark). Also disabled the Next.js dev-indicator "N" badge that was being mistaken for a logo.
 - Added mood-based images that swap per score tier: LOW shows a crying bear, MID shows happy panda+bear, HIGH shows a hugging pair. Combined with the per-tier Framer Motion, the characters now visibly change expression AND motion based on the score/mood.
+
+---
+Task ID: mobile-overflow-fix
+Agent: main-orchestrator (Z.ai Code)
+Task: Optimize for mobile + fix the post-quiz conversation/animation sequence going out of the mobile frame
+
+Work Log:
+- Diagnosed via Agent Browser rect measurement: on a 390px viewport all elements fit (panda 12-124, bear 266-378, bubble 12-235), but on a 320px (iPhone SE) viewport the LOW-tier panda motion (x:[0,120,200]) pushed the panda's right edge to 324 > 320 — sliding it OUT of the right frame (clipped). That was the "conversation part going out of the mobile frame".
+- Fix 1 (global catch-all): added `html, body { overflow-x: hidden; max-width: 100vw; }` to globals.css so no element can ever cause horizontal scroll, regardless of position/motion.
+- Fix 2 (mobile-safe motion): reduced the LOW-tier Framer Motion amplitudes so characters stay in-frame on small phones:
+  * panda: x [0,120,200] → [0,60,120] (max right edge now 12+120+112 = 244 < 320, fully in-frame)
+  * bear: x [0,-150,-350] → [0,-90,-220] (still pushed off-screen left = the block effect, but clipped cleanly by the scene's overflow-hidden)
+- Kept the dialogue bubble (w-max max-w-[80vw]) and character positions unchanged (already within frame on 320px — measured: bubble right 235 < 320, panda 12-124, bear 196-308).
+- Kept the scene container `relative min-h-screen overflow-hidden bg-[#DDEEFF]` so any off-screen motion (bear pushed off) is clipped to the viewport with no scroll.
+
+Verification (Agent Browser):
+- 320x568 (iPhone SE): LOW tier — panda rect [132,244] (fully in frame, 244<320 ✓), bear pushed off-screen left (clipped), scrollWidth=clientWidth=320 (NO horizontal scroll ✓). VLM: panda fully visible & not cut off, bear gone (pushed off), "bye bye I will block you" bubble fully visible.
+- 390x780 (iPhone 12/13): LOW tier — panda [132,244] (in frame ✓), scrollWidth=clientWidth=390 (no scroll ✓).
+- Lint clean, no page errors.
+
+Stage Summary:
+- Mobile overflow fixed: the LOW-tier panda no longer slides out of the right edge on small phones (motion amplitude reduced to stay in-frame), the bear's off-screen push is clipped cleanly, and a global `overflow-x:hidden` on html/body guarantees no horizontal scroll anywhere. Verified on 320px (iPhone SE) and 390px.
