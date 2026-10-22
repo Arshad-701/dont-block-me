@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import { Geist, Geist_Mono, Baloo_2 } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -77,12 +76,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* AdSterra / Monetag Social Bar */}
-        <Script
-          data-cfasync="false"
-          src="https://bicea.org/14/70cbe69a9660f38c774686f7ced5883b"
-          strategy="afterInteractive"
-        />
+        {/* Social bar removed for better UX */}
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${baloo.variable} antialiased bg-background text-foreground`}

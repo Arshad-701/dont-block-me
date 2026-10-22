@@ -62,7 +62,7 @@ export function NameGenderPage() {
             onContinue={goToCreating}
           />
         )}
-        <AdBanner />
+        <AdBanner size="300x250" />
       </main>
     </div>
   );

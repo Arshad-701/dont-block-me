@@ -37,6 +37,9 @@ export function LandingPage() {
         </div>
       </header>
 
+      {/* 728x90 leaderboard — desktop only (hidden on mobile for clean UX) */}
+      <AdBanner size="728x90" className="hidden md:flex" />
+
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pb-6">
         {/* Hero card */}
         <section className="relative mt-4 overflow-hidden rounded-[2rem] border-4 border-white bg-white/90 p-6 shadow-xl shadow-pink-200/50 animate-pop-in">
@@ -112,7 +115,7 @@ export function LandingPage() {
         </section>
 
         {/* Ad slot */}
-        <AdBanner />
+        <AdBanner size="300x250" />
 
         <p className="mt-5 text-center text-xs font-medium text-slate-500">
           {tr.footerNote}

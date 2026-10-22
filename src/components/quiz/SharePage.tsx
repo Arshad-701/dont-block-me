@@ -178,7 +178,7 @@ export function SharePage({ quizId }: { quizId: string }) {
           <ArrowRight className="h-4 w-4" />
         </button>
 
-        <AdBanner />
+        <AdBanner size="300x250" />
       </main>
     </div>
   );

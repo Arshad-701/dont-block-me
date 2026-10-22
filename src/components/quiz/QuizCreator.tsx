@@ -107,6 +107,9 @@ export function QuizCreator() {
         <ProgressBar current={current} />
       </div>
 
+      {/* 320x50 mobile banner — small, non-intrusive top ad */}
+      <AdBanner size="320x50" variant="inline" />
+
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pb-4">
         {/* question card — re-mounts (pop-in) when the question is swapped on skip */}
         <div
@@ -184,7 +187,7 @@ export function QuizCreator() {
           </div>
         </div>
 
-        <AdBanner />
+        <AdBanner size="300x250" />
 
         {/* question dots */}
         <div className="mt-3 flex items-center justify-center gap-1.5">

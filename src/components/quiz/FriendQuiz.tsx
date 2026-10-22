@@ -261,7 +261,7 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
               </span>
             </button>
           </div>
-          <AdBanner />
+          <AdBanner size="300x250" />
         </main>
       </div>
     );
@@ -331,7 +331,7 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
               </span>
             </button>
           </div>
-          <AdBanner />
+          <AdBanner size="300x250" />
         </main>
       </div>
     );
@@ -382,6 +382,9 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
           })}
         </div>
       </div>
+
+      {/* 320x50 mobile banner — small, non-intrusive top ad */}
+      <AdBanner size="320x50" variant="inline" />
 
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pb-4">
         <div key={friendCurrent} className="flex flex-1 flex-col animate-pop-in">
@@ -465,7 +468,7 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
           </button>
         </div>
 
-        <AdBanner />
+        <AdBanner size="300x250" />
       </main>
     </div>
   );
@@ -1137,7 +1140,7 @@ function ResultActions({
 
       {/* ad slot below modal */}
       <div className="mx-auto mt-4 w-full max-w-md">
-        <AdBanner />
+        <AdBanner size="300x250" />
       </div>
     </div>
   );
