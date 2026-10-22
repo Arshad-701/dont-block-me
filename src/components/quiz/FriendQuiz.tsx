@@ -595,7 +595,7 @@ function Characters({
       {/* CREATOR (Avatar A) — LEFT side, faces right */}
       <motion.div
         id="creator"
-        className="absolute bottom-6 left-3 sm:bottom-10 sm:left-16"
+        className="absolute bottom-[15%] left-3 sm:bottom-[18%] sm:left-16"
         animate={left.animate}
         transition={left.transition}
       >
@@ -613,7 +613,7 @@ function Characters({
       {/* FRIEND (Avatar B) — RIGHT side, faces left (flipped) */}
       <motion.div
         id="friend"
-        className="absolute bottom-6 right-3 sm:bottom-10 sm:right-16"
+        className="absolute bottom-[15%] right-3 sm:bottom-[18%] sm:right-16"
         animate={right.animate}
         transition={right.transition}
       >
@@ -784,7 +784,7 @@ function CounterPhase({
       />
 
       {/* paper score card slides down from the top */}
-      <div className="absolute inset-x-0 bottom-[30%] z-10 flex justify-center px-6">
+      <div className="absolute inset-x-0 bottom-[38%] z-10 flex justify-center px-6">
         <div className="w-full max-w-sm anim-slide-down text-center">
           <div className="relative mx-auto w-fit">
             <span className="block -rotate-2 rounded-md bg-amber-300 px-4 py-1 text-xs font-extrabold uppercase tracking-wide text-slate-700 shadow-md ring-1 ring-amber-400">
@@ -905,7 +905,7 @@ function TierPhase({
         <motion.img
           src="/avatars/both-hug.png"
           alt="Bubu and Dudu hugging"
-          className="absolute bottom-8 left-1/2 w-44 -translate-x-1/2 drop-shadow-lg sm:bottom-12 sm:w-52"
+          className="absolute bottom-[15%] left-1/2 w-44 -translate-x-1/2 drop-shadow-lg sm:bottom-[18%] sm:w-52"
           initial={{ scale: 0.6, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.7, ease: "easeOut", delay: 0.2 }}
@@ -921,7 +921,7 @@ function TierPhase({
       )}
 
       {/* tier speech bubble (centered above characters) */}
-      <div className="absolute inset-x-0 bottom-[30%] z-10 flex justify-center px-6">
+      <div className="absolute inset-x-0 bottom-[38%] z-10 flex justify-center px-6">
         <div className="flex w-full max-w-sm animate-pop-in justify-center">
           <SpeechBubble side="center">
             <p className="text-center text-base font-extrabold text-slate-800">
