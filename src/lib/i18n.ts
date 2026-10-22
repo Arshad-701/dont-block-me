@@ -150,7 +150,7 @@ const en: Translation = {
   rank: "rank",
   friend: "friend",
   score: "score",
-  footerNote: "made with 💕 for finding true friends",
+  footerNote: "made with 💕 by anti-arsh",
   back: "back",
   findBlockFakeFriends: "find & block your fake friends",
   nowYourTurn: "~ now, it's your turn ~",
