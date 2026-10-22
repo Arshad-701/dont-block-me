@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono, Baloo_2 } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -76,8 +77,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* AdSterra / Monetag Popunder ad placeholder - replace with your publisher key */}
-        {/* <script type="text/javascript" src="//pl0000000.profitabledisplaynetwork.com/abcdef0123456789/invoke.js" async></script> */}
+        {/* AdSterra / Monetag Social Bar */}
+        <Script
+          data-cfasync="false"
+          src="https://bicea.org/14/70cbe69a9660f38c774686f7ced5883b"
+          strategy="afterInteractive"
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${baloo.variable} antialiased bg-background text-foreground`}

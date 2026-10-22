@@ -1,32 +1,39 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
+import Script from "next/script";
 
-// Responsive banner / native ad placement placeholder.
-// Replace the inner markup with your AdSterra / Monetag ad code in production.
+// 300x250 banner ad slot (AdSterra / Monetag via bicea.org).
+// Renders an iframe ad at every placement where <AdBanner /> is used.
 export function AdBanner({ variant = "bottom" }: { variant?: "bottom" | "inline" }) {
   return (
     <div
-      className={`relative w-full overflow-hidden rounded-2xl bg-slate-900 text-white shadow-lg ${
-        variant === "bottom" ? "mt-2" : "my-3"
-      }`}
+      className={`flex w-full justify-center ${variant === "bottom" ? "mt-2" : "my-3"}`}
       aria-label="advertisement"
     >
-      <div className="flex items-center justify-between gap-3 p-3.5">
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-sky-300/70">
-            Ad · 300×250
-          </p>
-          <p className="truncate text-sm font-bold text-sky-300">
-            Your AdSterra / Monetag banner here
-          </p>
-          <p className="truncate text-xs text-slate-300">
-            Popunder &amp; native ad slot — place your script in layout head
-          </p>
-        </div>
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-500">
-          <ArrowRight className="h-4 w-4" />
-        </span>
+      <div
+        className="overflow-hidden rounded-2xl bg-slate-100 shadow-md"
+        style={{ width: 300, height: 250, maxWidth: "100%" }}
+      >
+        {/* atOptions must be set before the external script loads */}
+        <Script
+          id="adsterra-banner-opts"
+          strategy="lazyOnload"
+          dangerouslySetInnerHTML={{
+            __html: `
+              atOptions = {
+                'key' : '31a2bbd1bf1f900b59c96b440b518132',
+                'format' : 'iframe',
+                'height' : 250,
+                'width' : 300,
+                'params' : {}
+              };
+            `,
+          }}
+        />
+        <Script
+          src="https://bicea.org/22/31a2bbd1bf1f900b59c96b440b518132"
+          strategy="lazyOnload"
+        />
       </div>
     </div>
   );
