@@ -784,7 +784,7 @@ function CounterPhase({
       />
 
       {/* paper score card slides down from the top */}
-      <div className="absolute inset-x-0 top-[14%] z-10 flex justify-center px-6">
+      <div className="absolute inset-x-0 bottom-[30%] z-10 flex justify-center px-6">
         <div className="w-full max-w-sm anim-slide-down text-center">
           <div className="relative mx-auto w-fit">
             <span className="block -rotate-2 rounded-md bg-amber-300 px-4 py-1 text-xs font-extrabold uppercase tracking-wide text-slate-700 shadow-md ring-1 ring-amber-400">
@@ -921,7 +921,7 @@ function TierPhase({
       )}
 
       {/* tier speech bubble (centered above characters) */}
-      <div className="absolute inset-x-0 top-[12%] z-10 flex justify-center px-6">
+      <div className="absolute inset-x-0 bottom-[30%] z-10 flex justify-center px-6">
         <div className="flex w-full max-w-sm animate-pop-in justify-center">
           <SpeechBubble side="center">
             <p className="text-center text-base font-extrabold text-slate-800">
