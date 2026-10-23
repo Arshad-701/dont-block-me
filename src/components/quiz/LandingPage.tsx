@@ -8,13 +8,15 @@ import { SoundToggle } from "./SoundToggle";
 import { AdBanner } from "./AdBanner";
 import { useQuizStore } from "@/store/quiz-store";
 import { t } from "@/lib/i18n";
-import { playWhoosh } from "@/lib/sounds";
+import { playWhoosh, playPop } from "@/lib/sounds";
 
 export function LandingPage() {
   const router = useRouter();
   const lang = useQuizStore((s) => s.lang);
   const setStep = useQuizStore((s) => s.setStep);
   const resetCreator = useQuizStore((s) => s.resetCreator);
+  // persisted quiz the creator made on this device (null until they make one)
+  const myQuizId = useQuizStore((s) => s.quizId);
   const tr = t(lang);
 
   const startCreate = () => {
@@ -22,6 +24,13 @@ export function LandingPage() {
     resetCreator();
     setStep("create");
     router.push("/?page=create");
+  };
+
+  const goMyScoreboard = () => {
+    if (!myQuizId) return;
+    playPop();
+    setStep("scoreboard");
+    router.push(`/?page=scoreboard&quiz=${myQuizId}`);
   };
 
   return (
@@ -76,6 +85,27 @@ export function LandingPage() {
             </span>
           </button>
         </section>
+
+        {/* “view my scoreboard” shortcut — only for returning creators */}
+        {myQuizId && (
+          <button
+            onClick={goMyScoreboard}
+            className="group mt-4 flex w-full items-center gap-3 rounded-2xl border-2 border-amber-200 bg-white/95 p-3.5 text-left shadow-md transition hover:scale-[1.01] active:scale-95 animate-pop-in"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-300 to-yellow-500 text-white shadow-md">
+              <Trophy className="h-6 w-6" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-extrabold text-slate-800">
+                {tr.viewMyScores}
+              </span>
+              <span className="block truncate text-xs font-semibold text-slate-500">
+                {tr.yourQuizLive}
+              </span>
+            </span>
+            <ArrowRight className="h-5 w-5 shrink-0 text-amber-500 transition group-hover:translate-x-1" />
+          </button>
+        )}
 
         {/* How to play */}
         <section className="mt-6">

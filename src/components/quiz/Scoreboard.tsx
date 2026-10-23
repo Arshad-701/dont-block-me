@@ -2,18 +2,30 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Trophy, Crown, Medal, ArrowRight, Share2 } from "lucide-react";
+import {
+  Loader2,
+  Trophy,
+  Crown,
+  Medal,
+  ArrowRight,
+  Share2,
+  ChevronDown,
+  Check,
+  X,
+} from "lucide-react";
 import { AppHeader } from "./AppHeader";
 import { AdBanner } from "./AdBanner";
 import { useQuizStore } from "@/store/quiz-store";
 import { t } from "@/lib/i18n";
-import { TOTAL_QUESTIONS } from "@/lib/quiz-data";
+import { TOTAL_QUESTIONS, QUESTION_POOL } from "@/lib/quiz-data";
 import { toast } from "sonner";
+import { playPop } from "@/lib/sounds";
 
 type Score = {
   id: string;
   friendName: string;
   score: number;
+  answers: number[]; // friend's option index per slot
   createdAt: string;
 };
 
@@ -24,6 +36,9 @@ export function Scoreboard({ quizId }: { quizId: string }) {
   const [loading, setLoading] = useState(true);
   const [creatorName, setCreatorName] = useState("");
   const [scores, setScores] = useState<Score[]>([]);
+  // pool-question indices + creator's option indices (for the breakdown)
+  const [questions, setQuestions] = useState<number[]>([]);
+  const [creatorAnswers, setCreatorAnswers] = useState<number[]>([]);
 
   const load = async () => {
     setLoading(true);
@@ -37,6 +52,8 @@ export function Scoreboard({ quizId }: { quizId: string }) {
       }
       setCreatorName(data.quiz.creatorName);
       setScores(data.quiz.responses);
+      setQuestions(data.quiz.questions ?? []);
+      setCreatorAnswers(data.quiz.answers ?? []);
     } catch {
       toast.error("Could not load scoreboard");
     } finally {
@@ -139,7 +156,17 @@ export function Scoreboard({ quizId }: { quizId: string }) {
           ) : (
             <ul className="space-y-2.5">
               {sorted.map((s, i) => (
-                <ScoreRow key={s.id} rank={i + 1} name={s.friendName} score={s.score} />
+                <ScoreRow
+                  key={s.id}
+                  rank={i + 1}
+                  name={s.friendName}
+                  score={s.score}
+                  friendAnswers={s.answers}
+                  questions={questions}
+                  creatorAnswers={creatorAnswers}
+                  creatorName={creatorName}
+                  tr={tr}
+                />
               ))}
             </ul>
           )}
@@ -169,11 +196,22 @@ function ScoreRow({
   rank,
   name,
   score,
+  friendAnswers,
+  questions,
+  creatorAnswers,
+  creatorName,
+  tr,
 }: {
   rank: number;
   name: string;
   score: number;
+  friendAnswers: number[];
+  questions: number[];
+  creatorAnswers: number[];
+  creatorName: string;
+  tr: ReturnType<typeof t>;
 }) {
+  const [open, setOpen] = useState(false);
   const pct = score / TOTAL_QUESTIONS;
   let badge;
   if (rank === 1)
@@ -208,23 +246,129 @@ function ScoreRow({
       ? "from-pink-400 to-fuchsia-500"
       : "from-slate-300 to-slate-400";
 
+  const correctCount = friendAnswers.reduce(
+    (acc, a, i) => acc + (a !== -1 && a === (creatorAnswers[i] ?? -1) ? 1 : 0),
+    0
+  );
+
   return (
-    <li className="flex items-center gap-3 rounded-2xl bg-white/90 p-3 shadow-md ring-1 ring-black/5">
-      {badge}
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-bold text-slate-800">{name}</p>
-        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-          <div
-            className={`h-full rounded-full bg-gradient-to-r ${ringColor}`}
-            style={{ width: `${pct * 100}%` }}
-          />
+    <li className="overflow-hidden rounded-2xl bg-white/90 shadow-md ring-1 ring-black/5">
+      <button
+        type="button"
+        onClick={() => {
+          playPop();
+          setOpen((v) => !v);
+        }}
+        className="flex w-full items-center gap-3 p-3 text-left transition hover:bg-slate-50 active:scale-[0.99]"
+        aria-expanded={open}
+      >
+        {badge}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold text-slate-800">{name}</p>
+          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <div
+              className={`h-full rounded-full bg-gradient-to-r ${ringColor}`}
+              style={{ width: `${pct * 100}%` }}
+            />
+          </div>
+          <p className="mt-1 text-[10px] font-bold text-slate-400">
+            {correctCount}/{TOTAL_QUESTIONS} {tr.correctPick} ·{" "}
+            <span className="text-fuchsia-400">{open ? tr.hideAnswers : tr.seeAnswers}</span>
+          </p>
         </div>
-      </div>
-      <div className="text-right">
-        <p className="text-lg font-extrabold leading-none text-slate-800">{score}</p>
-        <p className="text-[10px] font-bold text-slate-400">/{TOTAL_QUESTIONS}</p>
-      </div>
-      {pct === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
+        <div className="text-right">
+          <p className="text-lg font-extrabold leading-none text-slate-800">{score}</p>
+          <p className="text-[10px] font-bold text-slate-400">/{TOTAL_QUESTIONS}</p>
+        </div>
+        {pct === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-slate-400 transition ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {/* per-question correct/wrong breakdown */}
+      {open && (
+        <div className="border-t border-slate-100 bg-slate-50/60 px-3 py-3">
+          <p className="mb-2 text-[10px] font-extrabold uppercase tracking-wide text-slate-400">
+            {tr.answerBreakdown}
+          </p>
+          <ul className="max-h-80 space-y-1.5 overflow-y-auto pr-1">
+            {Array.from({ length: TOTAL_QUESTIONS }).map((_, i) => {
+              const poolIdx = questions[i] ?? 0;
+              const q = QUESTION_POOL[poolIdx] ?? QUESTION_POOL[0];
+              const correctOpt = creatorAnswers[i] ?? -1;
+              const friendOpt = friendAnswers[i] ?? -1;
+              const isCorrect = friendOpt !== -1 && friendOpt === correctOpt;
+              const friendChoice = q.options[friendOpt];
+              const correctChoice = q.options[correctOpt];
+              return (
+                <li
+                  key={i}
+                  className={`rounded-xl border p-2 text-xs ${
+                    isCorrect
+                      ? "border-emerald-200 bg-emerald-50/70"
+                      : "border-rose-200 bg-rose-50/70"
+                  }`}
+                >
+                  <p className="flex items-center gap-1.5 font-bold text-slate-700">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/70 text-[10px] font-extrabold text-slate-500">
+                      {i + 1}
+                    </span>
+                    <span className="text-base leading-none">{q.emoji}</span>
+                    <span className="truncate">
+                      {q.title.replace("{name}", creatorName)}
+                    </span>
+                  </p>
+                  <div className="mt-1.5 grid grid-cols-2 gap-1.5 pl-[26px]">
+                    <div
+                      className={`flex items-center gap-1 rounded-lg px-1.5 py-1 ${
+                        isCorrect
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-rose-100 text-rose-700"
+                      }`}
+                    >
+                      <span className="text-base leading-none">
+                        {friendChoice?.emoji ?? "❓"}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate font-semibold">
+                        {friendChoice?.text ?? "—"}
+                      </span>
+                      {isCorrect ? (
+                        <Check className="h-3.5 w-3.5 shrink-0" />
+                      ) : (
+                        <X className="h-3.5 w-3.5 shrink-0" />
+                      )}
+                    </div>
+                    <div
+                      className={`flex items-center gap-1 rounded-lg px-1.5 py-1 ${
+                        isCorrect
+                          ? "bg-white text-slate-500"
+                          : "bg-emerald-100 text-emerald-700"
+                      }`}
+                    >
+                      <span className="text-base leading-none">
+                        {correctChoice?.emoji ?? "❓"}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate font-semibold">
+                        {correctChoice?.text ?? "—"}
+                      </span>
+                      {!isCorrect && <Check className="h-3.5 w-3.5 shrink-0" />}
+                    </div>
+                  </div>
+                  {!isCorrect && (
+                    <p className="mt-1 pl-[26px] text-[10px] font-bold text-slate-400">
+                      <span className="text-rose-500">{tr.theirPick}:</span>{" "}
+                      {friendChoice?.text ?? "—"} ·{" "}
+                      <span className="text-emerald-600">{tr.correctPick}:</span>{" "}
+                      {correctChoice?.text ?? "—"}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </li>
   );
 }

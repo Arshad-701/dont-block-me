@@ -151,7 +151,13 @@ export const useQuizStore = create<QuizStore>()(
     }),
     {
       name: "dont-block-me",
-      partialize: (s) => ({ lang: s.lang, soundOn: s.soundOn }),
+      // persist language, sound + the last quiz the creator made on this device
+      // so they can revisit the scoreboard without retaking a quiz.
+      partialize: (s) => ({
+        lang: s.lang,
+        soundOn: s.soundOn,
+        quizId: s.quizId,
+      }),
     }
   )
 );

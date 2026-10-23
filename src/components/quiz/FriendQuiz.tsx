@@ -55,11 +55,15 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
   const friendScore = useQuizStore((s) => s.friendScore);
   const setFriendScore = useQuizStore((s) => s.setFriendScore);
   const setStep = useQuizStore((s) => s.setStep);
+  // persisted quiz the creator made on THIS device — lets us detect a creator
+  // opening their own shared link and offer them the scoreboard instead.
+  const myQuizId = useQuizStore((s) => s.quizId);
 
   const [quiz, setQuiz] = useState<QuizInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<"name" | "gender" | "questions" | "result">("name");
   const [submitting, setSubmitting] = useState(false);
+  const [ownBannerDismissed, setOwnBannerDismissed] = useState(false);
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // clear any pending auto-advance on unmount
@@ -214,10 +218,39 @@ export function FriendQuiz({ quizId }: { quizId: string }) {
 
   // ----- NAME -----
   if (phase === "name") {
+    const isOwnQuiz = !!myQuizId && myQuizId === quizId;
+    const showOwnBanner = isOwnQuiz && !ownBannerDismissed;
     return (
       <div className="flex min-h-screen flex-col">
         <AppHeader />
         <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pb-6">
+          {/* creator-opened-their-own-link escape hatch → scoreboard */}
+          {showOwnBanner && (
+            <div className="relative mb-3 mt-2 rounded-2xl border-2 border-amber-300 bg-amber-50/90 p-3 pr-9 shadow-sm animate-pop-in">
+              <button
+                onClick={() => setOwnBannerDismissed(true)}
+                className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/70 text-slate-400 transition hover:text-slate-700"
+                aria-label={tr.close}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+              <p className="pr-2 text-xs font-bold text-amber-700">
+                {tr.ownQuizNotice}
+              </p>
+              <button
+                onClick={() => {
+                  playWhoosh();
+                  setStep("scoreboard");
+                  router.push(`/?page=scoreboard&quiz=${quizId}`);
+                }}
+                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 px-4 py-2.5 text-xs font-bold text-white shadow-md transition hover:scale-[1.02] active:scale-95"
+              >
+                <Trophy className="h-4 w-4" />
+                {tr.viewMyScores}
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
           <div className="flex flex-1 flex-col items-center justify-center py-6 animate-pop-in">
             <div className="relative mb-3">
               <img

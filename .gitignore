@@ -56,3 +56,6 @@ server.log
 .env
 .env.*
 db/
+
+# agent-browser / Read tool output artifacts
+tool-results/

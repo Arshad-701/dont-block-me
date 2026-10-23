@@ -80,6 +80,14 @@ export type Translation = {
   rank: string;
   friend: string;
   score: string;
+  viewMyScores: string;
+  yourQuizLive: string;
+  ownQuizNotice: string;
+  seeAnswers: string;
+  hideAnswers: string;
+  theirPick: string;
+  correctPick: string;
+  answerBreakdown: string;
   // footer
   footerNote: string;
   back: string;
@@ -150,6 +158,14 @@ const en: Translation = {
   rank: "rank",
   friend: "friend",
   score: "score",
+  viewMyScores: "view my scoreboard",
+  yourQuizLive: "your quiz is live — see who knows you best!",
+  ownQuizNotice: "wait, this is YOUR quiz! want to see the scoreboard instead?",
+  seeAnswers: "see answers",
+  hideAnswers: "hide",
+  theirPick: "their pick",
+  correctPick: "correct",
+  answerBreakdown: "answer breakdown",
   footerNote: "made with 💕 by anti-arsh",
   back: "back",
   findBlockFakeFriends: "find & block your fake friends",
